@@ -4,12 +4,16 @@ import typing
 
 import cv2
 import numpy
-import time
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
 from .error import SurfCudaError
 from loguru import logger
 from typing import Tuple, List
+
+"""
+    cuda_orb 重点需要调整金字塔等级(scaleFactor, nlevels, firstLevel), 在图片过小时, 在detect阶段会报异常
+    同时为了获取到最多的特征,可以调整fastThreshold
+"""
 
 
 class _ORB(KeypointMatch):
@@ -18,7 +22,7 @@ class _ORB(KeypointMatch):
     def __init__(self):
         super(_ORB, self).__init__()
         # 创建ORB实例
-        self.detector = cv2.ORB_create(nfeatures=50000, scaleFactor=2, nlevels=3, firstLevel=1)
+        self.detector = cv2.ORB_create(nfeatures=50000)
         self.descriptor = cv2.xfeatures2d.BEBLID_create(0.75)
 
     def create_matcher(self) -> cv2.DescriptorMatcher:
@@ -230,7 +234,8 @@ class _CUDA_ORB(KeypointMatch):
 
     def __init__(self):
         super(_CUDA_ORB, self).__init__()
-        self.detector = cv2.cuda_ORB.create(nfeatures=500000, scaleFactor=2, nlevels=2, firstLevel=2, fastThreshold=15)
+        # 创建ORB实例
+        self.detector = cv2.cuda_ORB.create(nfeatures=500000)
 
     def check_detection_input(self, im_source: IMAGE, im_search: IMAGE) -> Tuple[IMAGE, IMAGE]:
         im_source.transform_gpu()
@@ -238,7 +243,6 @@ class _CUDA_ORB(KeypointMatch):
         return im_source, im_search
 
     def create_matcher(self):
-        # https://github.com/iago-suarez/beblid-opencv-demo
         matcher = cv2.cuda_DescriptorMatcher.createBFMatcher(cv2.NORM_HAMMING)
         return matcher
 
