@@ -3,7 +3,7 @@
 """ opencv matchTemplate"""
 import cv2
 import time
-from .utils import generate_result
+from .utils import generate_result, print_run_time
 from baseImage import IMAGE, Rect
 from loguru import logger
 from typing import Union
@@ -15,6 +15,7 @@ class _match_template(object):
     def __init__(self):
         self.threshold = 0.85
 
+    @print_run_time
     def find_template(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
         """
         模板匹配
@@ -38,10 +39,11 @@ class _match_template(object):
             return None
         x, y = max_loc
         rect = Rect(x=x, y=y, width=w, height=h)
-        logger.info('[{METHOD_NAME}]{Rect}, confidence={confidence}, time={time:.2f}ms'.format(
+        logger.debug('[{METHOD_NAME}]{Rect}, confidence={confidence}, time={time:.2f}ms'.format(
             METHOD_NAME=self.METHOD_NAME, confidence=confidence, Rect=rect, time=(time.time() - start) * 1000))
         return generate_result(rect, confidence)
 
+    @print_run_time
     def find_templates(self, im_source, im_search, threshold: Union[int, float] = None,
                        max_count: int = 10,
                        rgb: bool = True):
@@ -72,7 +74,7 @@ class _match_template(object):
             cv2.rectangle(res, (int(max_loc[0] - w / 2), int(max_loc[1] - h / 2)),
                           (int(max_loc[0] + w / 2), int(max_loc[1] + h / 2)), (0, 0, 0), -1)
         if result:
-            print('[{METHOD_NAME}s] find counts:{counts}, time={time:.2f}ms{result}'.format(
+            logger.debug('[{METHOD_NAME}s] find counts:{counts}, time={time:.2f}ms{result}'.format(
                 METHOD_NAME=self.METHOD_NAME,
                 counts=len(result), time=(time.time() - start) * 1000,
                 result=''.join(['\n\t{}, confidence={}'.format(x['rect'], x['confidence'])for x in result])))

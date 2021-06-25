@@ -6,7 +6,7 @@ import cv2
 import numpy
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
-from .error import SurfCudaError
+from .exceptions import SurfCudaError
 from loguru import logger
 from typing import Tuple, List
 
