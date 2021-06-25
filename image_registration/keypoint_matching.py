@@ -4,7 +4,7 @@ import time
 import cv2
 import numpy
 import numpy as np
-from .utils import generate_result
+from .utils import generate_result, match_time_debug, print_run_time
 from .match_template import match_template
 from baseImage import IMAGE, Rect, Point, Size
 from loguru import logger
@@ -149,20 +149,11 @@ class KeypointMatch(object):
         des = numpy.delete(des, delect_list, axis=0)
         return kp, des
 
+    @match_time_debug
     def get_rect_from_good_matches(self, im_source, im_search, kp_sch, des_sch, kp_src, des_src):
         matches = self.match_keypoints(des_sch=des_sch, des_src=des_src)
         good = self.get_good_in_matches(matches)
         rect = self.extract_good_points(im_source, im_search, kp_sch, kp_src, good)
-        # img_source, img_search = IMAGE(im_source), IMAGE(im_search)
-        # print('{}:kp_sch={}，kp_src={}, good={}'.format(self.METHOD_NAME,
-        #                                                str(len(kp_sch)), str(len(kp_src)), str(len(good))))
-        # cv2.namedWindow(str(len(good) + 1), cv2.WINDOW_KEEPRATIO)
-        # img_search, img_source = img_search.imread(), img_source.imread()
-        # cv2.imshow(str(len(good)), cv2.drawMatches(img_search, kp_sch, img_source, kp_src, good, None, flags=2))
-        # cv2.imshow(str(len(good) + 1), cv2.drawKeypoints(img_source, kp_src, img_source, color=(255, 0, 255)))
-        # cv2.imshow(str(len(good) + 2), cv2.drawKeypoints(img_search, kp_sch, img_search, color=(255, 0, 255)))
-        # cv2.waitKey(0)
-
         return rect, matches, good
 
     def get_keypoints_and_descriptors(self, image: numpy.ndarray) -> Tuple[List[cv2.KeyPoint], numpy.ndarray]:

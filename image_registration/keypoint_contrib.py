@@ -6,7 +6,7 @@ import cv2
 import numpy
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
-from .exceptions import SurfCudaError
+from .exceptions import (SurfCudaError, ExtractorError, NoModuleError)
 from loguru import logger
 from typing import Tuple, List
 
@@ -19,26 +19,26 @@ from typing import Tuple, List
 class _ORB(KeypointMatch):
     METHOD_NAME = "ORB"
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(_ORB, self).__init__()
+        # 初始化参数
+        kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
         # 创建ORB实例
-        self.detector = cv2.ORB_create(nfeatures=50000)
-        self.descriptor = cv2.xfeatures2d.BEBLID_create(0.75)
+        try:
+            self.detector = cv2.ORB_create(*args, **kwargs)
+        except:
+            raise ExtractorError
+        else:
+            try:
+                # https://docs.opencv.org/master/d7/d99/classcv_1_1xfeatures2d_1_1BEBLID.html
+                # https://github.com/iago-suarez/beblid-opencv-demo
+                self.descriptor = cv2.xfeatures2d.BEBLID_create(0.75)
+            except AttributeError:
+                raise NoModuleError
 
     def create_matcher(self) -> cv2.DescriptorMatcher:
-        # https://github.com/iago-suarez/beblid-opencv-demo
-        # need opencv-contrib
         matcher = cv2.DescriptorMatcher_create(cv2.DescriptorMatcher_BRUTEFORCE_HAMMING)
         return matcher
-
-    def get_key_points(self, im_source: IMAGE, im_search: IMAGE):
-        """计算所有特征点,并匹配"""
-        im_source, im_search = im_source.imread(), im_search.imread()
-        kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search)
-        kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source)
-        matches = self.match_keypoints(des_sch=des_sch, des_src=des_src)
-        good = self.get_good_in_matches(matches)
-        return kp_sch, kp_src, good, matches
 
     def get_good_in_matches(self, matches) -> List[cv2.DMatch]:
         good = []
@@ -60,19 +60,19 @@ class SIFT(KeypointMatch):
     # SIFT识别特征点匹配，参数设置:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(SIFT, self).__init__()
+        # 初始化参数
+        kwargs['edgeThreshold'] = kwargs.pop('edgeThreshold', 10)
         # 创建SIFT实例
-        self.detector = cv2.SIFT_create(edgeThreshold=10)
+        try:
+            self.detector = cv2.SIFT_create(*args, **kwargs)
+        except:
+            raise ExtractorError
 
 
-class RootSIFT(KeypointMatch):
+class RootSIFT(SIFT):
     METHOD_NAME = 'RootSIFT'
-
-    def __init__(self):
-        super(RootSIFT, self).__init__()
-        # 创建SIFT实例
-        self.detector = cv2.SIFT_create(edgeThreshold=10)
 
     def get_keypoints_and_descriptors(self, image):
         keypoints, descriptors = self.detector.detectAndCompute(image, None)
@@ -101,9 +101,12 @@ class _SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(_SURF, self).__init__()
-        self.detector = cv2.xfeatures2d.SURF_create(self.HESSIAN_THRESHOLD, upright=self.UPRIGHT)
+        try:
+            self.detector = cv2.xfeatures2d.SURF_create(self.HESSIAN_THRESHOLD, upright=self.UPRIGHT)
+        except:
+            raise ExtractorError
 
 
 class BRIEF(KeypointMatch):

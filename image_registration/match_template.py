@@ -15,7 +15,6 @@ class _match_template(object):
     def __init__(self):
         self.threshold = 0.85
 
-    @print_run_time
     def find_template(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
         """
         模板匹配
@@ -43,7 +42,6 @@ class _match_template(object):
             METHOD_NAME=self.METHOD_NAME, confidence=confidence, Rect=rect, time=(time.time() - start) * 1000))
         return generate_result(rect, confidence)
 
-    @print_run_time
     def find_templates(self, im_source, im_search, threshold: Union[int, float] = None,
                        max_count: int = 10,
                        rgb: bool = True):
