@@ -44,3 +44,32 @@ def match_time_debug(func):
         return result
 
     return wrapper
+
+
+def print_best_result(func):
+    def wrapper(self, *args, **kwargs):
+        start_time = time.time()
+        result = func(self, *args, **kwargs)
+        logger.debug('[{FUNC_NAME}({METHOD_NAME})]rect={Rect}, confidence={confidence}, time={time:.2f}ms'.format(
+            FUNC_NAME=func.__name__, METHOD_NAME=self.METHOD_NAME,
+            confidence=(result and result['confidence'] or None),
+            Rect=(result and result['rect'] or None),
+            time=(time.time() - start_time) * 1000))
+
+        return result
+
+    return wrapper
+
+
+def print_all_result(func):
+    def wrapper(self, *args, **kwargs):
+        start_time = time.time()
+        result = func(self, *args, **kwargs)
+        logger.debug('[{FUNC_NAME}({METHOD_NAME})] find counts:{counts}, time={time:.2f}ms{result}'.format(
+            FUNC_NAME=func.__name__, METHOD_NAME=self.METHOD_NAME,
+            counts=len(result), time=(time.time() - start_time) * 1000,
+            result=''.join(['\n\t{}, confidence={}'.format(x['rect'], x['confidence']) for x in result])))
+
+        return result
+
+    return wrapper

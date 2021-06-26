@@ -6,7 +6,8 @@ import cv2
 import numpy
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
-from .exceptions import (SurfCudaError, ExtractorError, NoModuleError)
+from .exceptions import (SurfCudaError, ExtractorError, NoModuleError,
+                         NoEnoughPoints)
 from loguru import logger
 from typing import Tuple, List
 
@@ -23,8 +24,9 @@ class _ORB(KeypointMatch):
         super(_ORB, self).__init__()
         # 初始化参数
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
-        # 创建ORB实例
+
         try:
+            # 创建ORB实例
             self.detector = cv2.ORB_create(*args, **kwargs)
         except:
             raise ExtractorError
@@ -52,6 +54,9 @@ class _ORB(KeypointMatch):
     def get_keypoints_and_descriptors(self, image: numpy.ndarray) -> Tuple[List[cv2.KeyPoint], numpy.ndarray]:
         keypoints = self.detector.detect(image, None)
         keypoints, descriptors = self.descriptor.compute(image, keypoints)
+
+        if len(keypoints) < 2:
+            raise NoEnoughPoints('detect not enough feature points in input images')
         return keypoints, descriptors
 
 
@@ -77,6 +82,9 @@ class RootSIFT(SIFT):
     def get_keypoints_and_descriptors(self, image):
         keypoints, descriptors = self.detector.detectAndCompute(image, None)
         keypoints, descriptors = self.rootSIFT_compute(image, keypoints)
+
+        if len(keypoints) < 2:
+            raise NoEnoughPoints('detect not enough feature points in input images')
         return keypoints, descriptors
 
     def rootSIFT_compute(self, image, kps, eps=1e-7):
@@ -103,8 +111,12 @@ class _SURF(KeypointMatch):
 
     def __init__(self, *args, **kwargs):
         super(_SURF, self).__init__()
+        # 初始化参数
+        kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
+        kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
+
         try:
-            self.detector = cv2.xfeatures2d.SURF_create(self.HESSIAN_THRESHOLD, upright=self.UPRIGHT)
+            self.detector = cv2.xfeatures2d.SURF_create(*args, **kwargs)
         except:
             raise ExtractorError
 
@@ -128,16 +140,23 @@ class BRIEF(KeypointMatch):
         kp = self.star.detect(image, None)
         # compute the descriptors with BRIEF
         keypoints, descriptors = self.detector.compute(image, kp)
+
+        if len(keypoints) < 2:
+            raise NoEnoughPoints('detect not enough feature points in input images')
         return keypoints, descriptors
 
 
 class AKAZE(KeypointMatch):
     METHOD_NAME = "AKAZE"
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(AKAZE, self).__init__()
         # Initiate AKAZE detector
-        self.detector = cv2.AKAZE_create()
+
+        try:
+            self.detector = cv2.AKAZE_create( *args, **kwargs)
+        except:
+            raise ExtractorError
 
     def create_matcher(self) -> cv2.BFMatcher:
         matcher = cv2.BFMatcher_create(cv2.NORM_L1)
@@ -154,16 +173,28 @@ class _CUDA_SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(_CUDA_SURF, self).__init__()
-        self.detector = cv2.cuda.SURF_CUDA_create(self.HESSIAN_THRESHOLD, _extended=True, _upright=self.UPRIGHT,
-                                                  _nOctaveLayers=4)
+        # 初始化参数
+        kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
+        kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
+        kwargs['_extended '] = kwargs.pop('_extended ', True)
+
+        try:
+            self.detector = cv2.cuda.SURF_CUDA_create( *args, **kwargs)
+        except:
+            raise ExtractorError
 
     def create_matcher(self):
         matcher = cv2.cuda.DescriptorMatcher_createBFMatcher(cv2.NORM_L2)
         return matcher
 
     def check_detection_input(self, im_source: IMAGE, im_search: IMAGE):
+        if not isinstance(im_source, IMAGE):
+            im_source = IMAGE(im_source)
+        if not isinstance(im_search, IMAGE):
+            im_search = IMAGE(im_search)
+
         im_source.transform_gpu()
         im_search.transform_gpu()
         im_source, im_search = self.check_image_size(im_source, im_search)
@@ -224,6 +255,9 @@ class _CUDA_SURF(KeypointMatch):
     def get_keypoints_and_descriptors(self, image: cv2.cuda_GpuMat) -> Tuple[List[cv2.KeyPoint], cv2.cuda_GpuMat]:
         """获取图像特征点和描述符."""
         keypoints, descriptors = self.detector.detectWithDescriptors(image, None)
+
+        if len(keypoints) < 2:
+            raise NoEnoughPoints('detect not enough feature points in input images')
         return keypoints, descriptors
 
 
@@ -235,12 +269,22 @@ class _CUDA_ORB(KeypointMatch):
     METHOD_NAME = 'CUDA_ORB'
     FILTER_RATIO = 0.59
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(_CUDA_ORB, self).__init__()
-        # 创建ORB实例
-        self.detector = cv2.cuda_ORB.create(nfeatures=500000)
+        # 初始化参数
+        kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
+        try:
+            # 创建ORB实例
+            self.detector = cv2.cuda_ORB.create( *args, **kwargs)
+        except:
+            raise ExtractorError
 
     def check_detection_input(self, im_source: IMAGE, im_search: IMAGE) -> Tuple[IMAGE, IMAGE]:
+        if not isinstance(im_source, IMAGE):
+            im_source = IMAGE(im_source)
+        if not isinstance(im_search, IMAGE):
+            im_search = IMAGE(im_search)
+
         im_source.transform_gpu()
         im_search.transform_gpu()
         return im_source, im_search
@@ -253,6 +297,9 @@ class _CUDA_ORB(KeypointMatch):
         # https://github.com/prismai/opencv_contrib/commit/d7d6360fceb5881d596be95b03568d4dcdb7236d
         keypoints, descriptors = self.detector.detectAndComputeAsync(image, None)
         keypoints = self.detector.convert(keypoints)
+
+        if len(keypoints) < 2:
+            raise NoEnoughPoints('detect not enough feature points in input images')
         return keypoints, descriptors
 
     def match_keypoints(self, des_sch: cv2.cuda_GpuMat, des_src: cv2.cuda_GpuMat) -> List[List[cv2.DMatch]]:

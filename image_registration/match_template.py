@@ -3,7 +3,7 @@
 """ opencv matchTemplate"""
 import cv2
 import time
-from .utils import generate_result, print_run_time
+from .utils import generate_result, print_run_time, print_best_result, print_all_result
 from baseImage import IMAGE, Rect
 from loguru import logger
 from typing import Union
@@ -15,6 +15,7 @@ class _match_template(object):
     def __init__(self):
         self.threshold = 0.85
 
+    @print_best_result
     def find_template(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
         """
         模板匹配
@@ -24,7 +25,6 @@ class _match_template(object):
         :param rgb: 是否判断rgb颜色
         :return: None or Rect
         """
-        start = time.time()
         im_source, im_search = self.check_detection_input(im_source, im_search)
         result = self._get_template_result_matrix(im_source, im_search)
         # 找到最佳匹配项
@@ -38,10 +38,9 @@ class _match_template(object):
             return None
         x, y = max_loc
         rect = Rect(x=x, y=y, width=w, height=h)
-        logger.debug('[{METHOD_NAME}]{Rect}, confidence={confidence}, time={time:.2f}ms'.format(
-            METHOD_NAME=self.METHOD_NAME, confidence=confidence, Rect=rect, time=(time.time() - start) * 1000))
         return generate_result(rect, confidence)
 
+    @print_all_result
     def find_templates(self, im_source, im_search, threshold: Union[int, float] = None,
                        max_count: int = 10,
                        rgb: bool = True):
@@ -54,7 +53,6 @@ class _match_template(object):
         :param rgb: 是否判断rgb颜色
         :return: None or Rect
         """
-        start = time.time()
         im_source, im_search = self.check_detection_input(im_source, im_search)
         # 模板匹配取得矩阵
         res = self._get_template_result_matrix(im_source, im_search)
@@ -71,11 +69,6 @@ class _match_template(object):
             result.append(generate_result(rect, confidence))
             cv2.rectangle(res, (int(max_loc[0] - w / 2), int(max_loc[1] - h / 2)),
                           (int(max_loc[0] + w / 2), int(max_loc[1] + h / 2)), (0, 0, 0), -1)
-        if result:
-            logger.debug('[{METHOD_NAME}s] find counts:{counts}, time={time:.2f}ms{result}'.format(
-                METHOD_NAME=self.METHOD_NAME,
-                counts=len(result), time=(time.time() - start) * 1000,
-                result=''.join(['\n\t{}, confidence={}'.format(x['rect'], x['confidence'])for x in result])))
         return result if result else None
 
     @staticmethod
@@ -86,7 +79,14 @@ class _match_template(object):
 
     @staticmethod
     def check_detection_input(im_source, im_search):
-        return IMAGE(im_source), IMAGE(im_search)
+        if not isinstance(im_source, IMAGE):
+            im_source = IMAGE(im_source)
+        if not isinstance(im_search, IMAGE):
+            im_search = IMAGE(im_search)
+
+        im_source.transform_cpu()
+        im_search.transform_cpu()
+        return im_source, im_search
 
     @staticmethod
     def cal_rgb_confidence(img_src_rgb, img_sch_rgb):

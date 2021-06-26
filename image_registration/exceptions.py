@@ -30,4 +30,5 @@ class ExtractorError(BaseError):
     """ An error occurred while create Extractor """
 
 
-
+class NoEnoughPoints(BaseError):
+    """ detect not enough feature points in input images"""

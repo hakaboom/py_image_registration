@@ -4,7 +4,8 @@ import time
 import cv2
 import numpy
 import numpy as np
-from .utils import generate_result, match_time_debug, print_run_time
+from .utils import generate_result, match_time_debug, print_all_result, print_best_result
+from .exceptions import NoEnoughPoints
 from .match_template import match_template
 from baseImage import IMAGE, Rect, Point, Size
 from loguru import logger
@@ -29,9 +30,9 @@ class KeypointMatch(object):
         matcher = cv2.FlannBasedMatcher(index_params, search_params)
         return matcher
 
+    @print_best_result
     def find_best(self, im_source, im_search, threshold=None):
         """在im_source中找到最符合im_search的范围"""
-        start_time = time.time()
         threshold = threshold is None and self.threshold or threshold
         im_source, im_search = self.check_detection_input(im_source, im_search)
         if not im_source or not im_search:
@@ -49,19 +50,15 @@ class KeypointMatch(object):
         target_img.resize(w, h)
         confidence = self._cal_confidence(resize_img=target_img, im_search=im_search)
         best_match = generate_result(rect=rect, confi=confidence)
-        logger.info('[{method_name}]:{Rect}, confidence={confidence:.5f}, '
-                    'time={time:.1f}ms',
-                    confidence=confidence, Rect=rect, time=(time.time() - start_time) * 1000,
-                    method_name=self.METHOD_NAME)
         return best_match if confidence > threshold else None
 
+    @print_all_result
     def find_all(self, im_source, im_search, threshold=None):
-        start = time.time()
         threshold = threshold is None and self.threshold or threshold
         im_source, im_search = self.check_detection_input(im_source, im_search)
         if not im_source or not im_search:
             return None
-        rect_list = []
+        result = []
         # 第一步: 获取特征点集
         kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search.rgb_2_gray())
         kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source.rgb_2_gray())
@@ -71,7 +68,9 @@ class KeypointMatch(object):
             if len(kp_src) == 0:
                 break
 
-            rect, matches, good = self.get_rect_from_good_matches(im_source, im_search, kp_sch, des_sch, kp_src, des_src)
+            rect, matches, good = self.get_rect_from_good_matches(im_source, im_search,
+                                                                  kp_sch, des_sch,
+                                                                  kp_src, des_src)
             if not rect:
                 break
             target_img = im_source.crop_image(rect)
@@ -79,7 +78,8 @@ class KeypointMatch(object):
             target_img.resize(w, h)
             confidence = self._cal_confidence(resize_img=target_img, im_search=im_search)
             if confidence > threshold:
-                rect_list.append(rect)
+                result.append(generate_result(rect, confidence))
+
                 kp_src, des_src = self.delect_good_descriptors(good, kp_src, des_src)
                 # 无特征点时, 结束函数
                 if len(kp_src) == 0:
@@ -88,13 +88,7 @@ class KeypointMatch(object):
                 kp_src, des_src = self.delect_rect_descriptors(rect, kp_src, des_src)
             else:
                 break
-
-        if rect_list:
-            logger.info('[{METHOD_NAME}] find counts:{counts}, time={time:.2f}ms{result}'.format(
-                METHOD_NAME=self.METHOD_NAME,
-                counts=len(rect_list), time=(time.time() - start) * 1000,
-                result=''.join(['\n\t{}'.format(x) for x in rect_list])))
-        return rect_list
+        return result
 
     @staticmethod
     def check_detection_input(im_source, im_search) -> Tuple[IMAGE, IMAGE]:
@@ -102,6 +96,7 @@ class KeypointMatch(object):
             im_source = IMAGE(im_source)
         if not isinstance(im_search, IMAGE):
             im_search = IMAGE(im_search)
+
         im_source.transform_cpu()
         im_search.transform_cpu()
         return im_source, im_search
@@ -158,6 +153,9 @@ class KeypointMatch(object):
 
     def get_keypoints_and_descriptors(self, image: numpy.ndarray) -> Tuple[List[cv2.KeyPoint], numpy.ndarray]:
         keypoints, descriptors = self.detector.detectAndCompute(image, None)
+
+        if len(keypoints) < 2:
+            raise NoEnoughPoints
         return keypoints, descriptors
 
     def match_keypoints(self, des_sch: numpy.ndarray, des_src: numpy.ndarray) -> List[List[cv2.DMatch]]:
