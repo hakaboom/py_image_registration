@@ -6,8 +6,9 @@ import cv2
 import numpy
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
-from .exceptions import (SurfCudaError, ExtractorError, NoModuleError,
-                         NoEnoughPoints)
+from .exceptions import (ExtractorError, NoModuleError, NoEnoughPointsError,
+                         CudaSuftInputImageError, CudaOrbDetectorError)
+from .utils import generate_result
 from loguru import logger
 from typing import Tuple, List
 
@@ -56,7 +57,7 @@ class _ORB(KeypointMatch):
         keypoints, descriptors = self.descriptor.compute(image, keypoints)
 
         if len(keypoints) < 2:
-            raise NoEnoughPoints('detect not enough feature points in input images')
+            raise NoEnoughPointsError('detect not enough feature points in input images')
         return keypoints, descriptors
 
 
@@ -84,7 +85,7 @@ class RootSIFT(SIFT):
         keypoints, descriptors = self.rootSIFT_compute(image, keypoints)
 
         if len(keypoints) < 2:
-            raise NoEnoughPoints('detect not enough feature points in input images')
+            raise NoEnoughPointsError('detect not enough feature points in input images')
         return keypoints, descriptors
 
     def rootSIFT_compute(self, image, kps, eps=1e-7):
@@ -142,7 +143,7 @@ class BRIEF(KeypointMatch):
         keypoints, descriptors = self.detector.compute(image, kp)
 
         if len(keypoints) < 2:
-            raise NoEnoughPoints('detect not enough feature points in input images')
+            raise NoEnoughPointsError('detect not enough feature points in input images')
         return keypoints, descriptors
 
 
@@ -176,14 +177,17 @@ class _CUDA_SURF(KeypointMatch):
     def __init__(self, *args, **kwargs):
         super(_CUDA_SURF, self).__init__()
         # 初始化参数
-        kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
-        kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
-        kwargs['_extended '] = kwargs.pop('_extended ', True)
+        kwargs['_hessianThreshold'] = kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD)
+        kwargs['_upright'] = kwargs.pop('_upright ', self.UPRIGHT)
+        kwargs['_extended'] = kwargs.pop('_extended ', True)
 
         try:
             self.detector = cv2.cuda.SURF_CUDA_create( *args, **kwargs)
         except:
             raise ExtractorError
+
+    def find_all(self, im_source, im_search, threshold=None):
+        raise NotImplementedError
 
     def create_matcher(self):
         matcher = cv2.cuda.DescriptorMatcher_createBFMatcher(cv2.NORM_L2)
@@ -204,8 +208,7 @@ class _CUDA_SURF(KeypointMatch):
         try:
             self._check_image_size(im_source)
             self._check_image_size(im_search)
-        except SurfCudaError as err:
-            logger.error('image size is to small: {}', err)
+        except CudaSuftInputImageError:
             return None, None
         return im_source, im_search
 
@@ -218,7 +221,6 @@ class _CUDA_SURF(KeypointMatch):
         def calc_size(octave, layer):
             HAAR_SIZE0 = 9
             HAAR_SIZE_INC = 6
-            # return '{}{}'.format((HAAR_SIZE0 + HAAR_SIZE_INC * layer), octave)
             return (HAAR_SIZE0 + HAAR_SIZE_INC * layer) << octave
 
         min_size = int(calc_size(self.detector.nOctaves - 1, 0))
@@ -227,15 +229,17 @@ class _CUDA_SURF(KeypointMatch):
         min_margin = ((calc_size((self.detector.nOctaves - 1), 2) >> 1) >> (self.detector.nOctaves - 1)) + 1
 
         if image.size[0] - min_size < 0 or image.size[1] - min_size < 0:
-            raise SurfCudaError(image)
+            raise CudaSuftInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
         if layer_height - 2 * min_margin < 0 or layer_width - 2 * min_margin < 0:
-            raise SurfCudaError(image)
+            raise CudaSuftInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
 
     def get_rect_from_good_matches(self, im_source, im_search, kp_sch, des_sch, kp_src, des_src):
         matches = self.match_keypoints(des_sch=des_sch, des_src=des_src)
         good = self.get_good_in_matches(matches)
-        kp_sch = cv2.cuda_SURF_CUDA.downloadKeypoints(self.detector, kp_sch)
-        kp_src = cv2.cuda_SURF_CUDA.downloadKeypoints(self.detector, kp_src)
+
+        kp_sch = self.detector.downloadKeypoints(kp_sch)
+        kp_src = self.detector.downloadKeypoints(kp_src)
+
         rect = self.extract_good_points(im_source, im_search, kp_sch, kp_src, good)
         return rect, matches, good
 
@@ -256,8 +260,8 @@ class _CUDA_SURF(KeypointMatch):
         """获取图像特征点和描述符."""
         keypoints, descriptors = self.detector.detectWithDescriptors(image, None)
 
-        if len(keypoints) < 2:
-            raise NoEnoughPoints('detect not enough feature points in input images')
+        if keypoints.size()[0] < 2:
+            raise NoEnoughPointsError('detect not enough feature points in input images')
         return keypoints, descriptors
 
 
@@ -295,11 +299,14 @@ class _CUDA_ORB(KeypointMatch):
 
     def get_keypoints_and_descriptors(self, image: cv2.cuda_GpuMat) -> Tuple[list, cv2.cuda_GpuMat]:
         # https://github.com/prismai/opencv_contrib/commit/d7d6360fceb5881d596be95b03568d4dcdb7236d
-        keypoints, descriptors = self.detector.detectAndComputeAsync(image, None)
+        try:
+            keypoints, descriptors = self.detector.detectAndComputeAsync(image, None)
+        except cv2.error:
+            raise CudaOrbDetectorError('adjust detector params')
         keypoints = self.detector.convert(keypoints)
 
         if len(keypoints) < 2:
-            raise NoEnoughPoints('detect not enough feature points in input images')
+            raise NoEnoughPointsError('detect not enough feature points in input images')
         return keypoints, descriptors
 
     def match_keypoints(self, des_sch: cv2.cuda_GpuMat, des_src: cv2.cuda_GpuMat) -> List[List[cv2.DMatch]]:

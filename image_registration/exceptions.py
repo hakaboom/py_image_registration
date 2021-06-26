@@ -1,17 +1,3 @@
-
-class SurfCudaError(Exception):
-    def __init__(self, image):
-        self.image = image
-
-    def __str__(self):
-        return '{width}x{height}'.format(width=self.image.size[1], height=self.image.size[0])
-
-
-class CvError(SurfCudaError):
-    def __init__(self, image):
-        self.image = image
-
-
 class BaseError(Exception):
     """ There was an exception that occurred while handling BaseImage"""
 
@@ -30,5 +16,15 @@ class ExtractorError(BaseError):
     """ An error occurred while create Extractor """
 
 
-class NoEnoughPoints(BaseError):
+class NoEnoughPointsError(BaseError):
     """ detect not enough feature points in input images"""
+
+
+class CudaSuftInputImageError(BaseError):
+    """ The image size does not conform to CUDA standard  """
+    # https://stackoverflow.com/questions/42492060/surf-cuda-error-while-computing-descriptors-and-keypoints
+    # https://github.com/opencv/opencv_contrib/blob/master/modules/xfeatures2d/src/surf.cuda.cpp#L151
+
+
+class CudaOrbDetectorError(BaseError):
+    """ An CvError when orb detector error occurred """

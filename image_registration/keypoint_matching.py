@@ -5,7 +5,7 @@ import cv2
 import numpy
 import numpy as np
 from .utils import generate_result, match_time_debug, print_all_result, print_best_result
-from .exceptions import NoEnoughPoints
+from .exceptions import NoEnoughPointsError
 from .match_template import match_template
 from baseImage import IMAGE, Rect, Point, Size
 from loguru import logger
@@ -63,16 +63,13 @@ class KeypointMatch(object):
         kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search.rgb_2_gray())
         kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source.rgb_2_gray())
 
-        while True:
-            # 无特征点时, 结束函数
-            if len(kp_src) == 0:
-                break
-
+        while len(kp_src) > 2 or len(kp_sch) > 2:
             rect, matches, good = self.get_rect_from_good_matches(im_source, im_search,
                                                                   kp_sch, des_sch,
                                                                   kp_src, des_src)
             if not rect:
                 break
+
             target_img = im_source.crop_image(rect)
             h, w = im_search.size
             target_img.resize(w, h)
@@ -82,11 +79,12 @@ class KeypointMatch(object):
 
                 kp_src, des_src = self.delect_good_descriptors(good, kp_src, des_src)
                 # 无特征点时, 结束函数
-                if len(kp_src) == 0:
+                if len(kp_src) < 2 or len(kp_sch) < 2:
                     break
 
                 kp_src, des_src = self.delect_rect_descriptors(rect, kp_src, des_src)
             else:
+                # 未找到其他匹配区域,退出寻找
                 break
         return result
 
@@ -155,7 +153,7 @@ class KeypointMatch(object):
         keypoints, descriptors = self.detector.detectAndCompute(image, None)
 
         if len(keypoints) < 2:
-            raise NoEnoughPoints
+            raise NoEnoughPointsError
         return keypoints, descriptors
 
     def match_keypoints(self, des_sch: numpy.ndarray, des_src: numpy.ndarray) -> List[List[cv2.DMatch]]:
