@@ -9,7 +9,7 @@ from .exceptions import NoEnoughPointsError, HomographyError, MatchResultError, 
 from .match_template import match_template
 from baseImage import IMAGE, Rect, Point, Size
 from loguru import logger
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 
 class KeypointMatch(object):
@@ -18,7 +18,7 @@ class KeypointMatch(object):
     METHOD_NAME = 'KeypointMatch'
     template = match_template()
 
-    def __init__(self, threshold=0.8):
+    def __init__(self, threshold: Union[int, float] = 0.8):
         self.threshold = threshold
         self.matcher = self.create_matcher()
         self.detector = cv2.KAZE_create()
@@ -31,7 +31,7 @@ class KeypointMatch(object):
         return matcher
 
     @print_best_result
-    def find_best(self, im_source, im_search, threshold=None):
+    def find_best(self, im_source, im_search, threshold: Union[int, float] = None):
         """在im_source中找到最符合im_search的范围"""
         threshold = threshold is None and self.threshold or threshold
         im_source, im_search = self.check_detection_input(im_source, im_search)
@@ -50,7 +50,7 @@ class KeypointMatch(object):
         return best_match if confidence > threshold else None
 
     @print_all_result
-    def find_all(self, im_source, im_search, threshold=None):
+    def find_all(self, im_source, im_search, threshold: Union[int, float] = None):
         threshold = threshold is None and self.threshold or threshold
         im_source, im_search = self.check_detection_input(im_source, im_search)
         if not im_source or not im_search:
