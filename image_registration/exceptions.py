@@ -12,7 +12,7 @@ class NoModuleError(BaseError):
     """ Missing dependent module """
 
 
-class ExtractorError(BaseError):
+class CreateExtractorError(BaseError):
     """ An error occurred while create Extractor """
 
 

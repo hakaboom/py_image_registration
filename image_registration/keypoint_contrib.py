@@ -1,15 +1,12 @@
 #! usr/bin/python
 # -*- coding:utf-8 -*-
-import typing
 
 import cv2
 import numpy
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
-from .exceptions import (ExtractorError, NoModuleError, NoEnoughPointsError,
+from .exceptions import (CreateExtractorError, NoModuleError, NoEnoughPointsError,
                          CudaSuftInputImageError, CudaOrbDetectorError)
-from .utils import generate_result
-from loguru import logger
 from typing import Tuple, List
 
 """
@@ -18,11 +15,11 @@ from typing import Tuple, List
 """
 
 
-class _ORB(KeypointMatch):
+class ORB(KeypointMatch):
     METHOD_NAME = "ORB"
 
     def __init__(self, *args, **kwargs):
-        super(_ORB, self).__init__()
+        super(ORB, self).__init__()
         # 初始化参数
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
 
@@ -30,7 +27,7 @@ class _ORB(KeypointMatch):
             # 创建ORB实例
             self.detector = cv2.ORB_create(*args, **kwargs)
         except:
-            raise ExtractorError
+            raise CreateExtractorError('create orb extractor error')
         else:
             try:
                 # https://docs.opencv.org/master/d7/d99/classcv_1_1xfeatures2d_1_1BEBLID.html
@@ -74,7 +71,7 @@ class SIFT(KeypointMatch):
         try:
             self.detector = cv2.SIFT_create(*args, **kwargs)
         except:
-            raise ExtractorError
+            raise CreateExtractorError('create sift extractor error')
 
 
 class RootSIFT(SIFT):
@@ -100,7 +97,7 @@ class RootSIFT(SIFT):
         return keypoints, descriptors
 
 
-class _SURF(KeypointMatch):
+class SURF(KeypointMatch):
     # https://docs.opencv.org/master/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html
     METHOD_NAME = "SURF"
     # 方向不变性:0检测/1不检测
@@ -111,7 +108,7 @@ class _SURF(KeypointMatch):
     FLANN_INDEX_KDTREE = 0
 
     def __init__(self, *args, **kwargs):
-        super(_SURF, self).__init__()
+        super(SURF, self).__init__()
         # 初始化参数
         kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
         kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
@@ -119,7 +116,7 @@ class _SURF(KeypointMatch):
         try:
             self.detector = cv2.xfeatures2d.SURF_create(*args, **kwargs)
         except:
-            raise ExtractorError
+            raise CreateExtractorError('create surf extractor error')
 
 
 class BRIEF(KeypointMatch):
@@ -155,16 +152,16 @@ class AKAZE(KeypointMatch):
         # Initiate AKAZE detector
 
         try:
-            self.detector = cv2.AKAZE_create( *args, **kwargs)
+            self.detector = cv2.AKAZE_create(*args, **kwargs)
         except:
-            raise ExtractorError
+            raise CreateExtractorError('create akaze extractor error')
 
     def create_matcher(self) -> cv2.BFMatcher:
         matcher = cv2.BFMatcher_create(cv2.NORM_L1)
         return matcher
 
 
-class _CUDA_SURF(KeypointMatch):
+class CUDA_SURF(KeypointMatch):
     # https://docs.opencv.org/master/db/d06/classcv_1_1cuda_1_1SURF__CUDA.html
     METHOD_NAME = 'CUDA_SURF'
     # 方向不变性:True检测/False不检测
@@ -175,16 +172,16 @@ class _CUDA_SURF(KeypointMatch):
     FLANN_INDEX_KDTREE = 0
 
     def __init__(self, *args, **kwargs):
-        super(_CUDA_SURF, self).__init__()
+        super(CUDA_SURF, self).__init__()
         # 初始化参数
         kwargs['_hessianThreshold'] = kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD)
         kwargs['_upright'] = kwargs.pop('_upright ', self.UPRIGHT)
         kwargs['_extended'] = kwargs.pop('_extended ', True)
 
         try:
-            self.detector = cv2.cuda.SURF_CUDA_create( *args, **kwargs)
+            self.detector = cv2.cuda.SURF_CUDA_create(*args, **kwargs)
         except:
-            raise ExtractorError
+            raise CreateExtractorError('create cuda_surf extractor error')
 
     def find_all(self, im_source, im_search, threshold=None):
         raise NotImplementedError
@@ -265,7 +262,7 @@ class _CUDA_SURF(KeypointMatch):
         return keypoints, descriptors
 
 
-class _CUDA_ORB(KeypointMatch):
+class CUDA_ORB(KeypointMatch):
     """
     cuda_orb在图像大小太小时,在detect阶段会出现ROI报错
     测试后发现可以同构建detector时, 修改金字塔nlevels和首层firstLevel大小来修正这个问题
@@ -274,14 +271,14 @@ class _CUDA_ORB(KeypointMatch):
     FILTER_RATIO = 0.59
 
     def __init__(self, *args, **kwargs):
-        super(_CUDA_ORB, self).__init__()
+        super(CUDA_ORB, self).__init__()
         # 初始化参数
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
         try:
             # 创建ORB实例
-            self.detector = cv2.cuda_ORB.create( *args, **kwargs)
+            self.detector = cv2.cuda_ORB.create(*args, **kwargs)
         except:
-            raise ExtractorError
+            raise CreateExtractorError('create cuda_orb extractor error')
 
     def check_detection_input(self, im_source: IMAGE, im_search: IMAGE) -> Tuple[IMAGE, IMAGE]:
         if not isinstance(im_source, IMAGE):
@@ -343,17 +340,3 @@ class _CUDA_ORB(KeypointMatch):
         mat = cv2.cuda_GpuMat()
         mat.upload(des)
         return kp, mat
-
-
-if cv2.cuda.getCudaEnabledDeviceCount() > 0:
-    class SURF(_CUDA_SURF):
-        pass
-
-    class ORB(_CUDA_ORB):
-        pass
-else:
-    class SURF(_SURF):
-        pass
-
-    class ORB(_ORB):
-        pass
