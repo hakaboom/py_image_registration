@@ -4,6 +4,14 @@ Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTempl
 
 同时包含cuda加速(ORB, SURF, matchTemplate)
 
+
+## Requirements
+- 开发时使用的是python 3.8
+- opencv需要自己安装或自行编译,读取的到cv2模块就行
+
+## Installation
+pip3 install -U py_image_registration
+
 ## Example
 
 1. **create**
