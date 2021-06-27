@@ -5,7 +5,7 @@ import cv2
 import numpy
 import numpy as np
 from .utils import generate_result, match_time_debug, print_all_result, print_best_result
-from .exceptions import NoEnoughPointsError
+from .exceptions import NoEnoughPointsError, HomographyError, MatchResultError, PerspectiveTransformError
 from .match_template import match_template
 from baseImage import IMAGE, Rect, Point, Size
 from loguru import logger
@@ -45,10 +45,7 @@ class KeypointMatch(object):
         if not rect:
             return None
         # 第三步, 从匹配图片截取矩阵范围,并缩放到模板大小,进行模板匹配求出相似度
-        target_img = im_source.crop_image(rect)
-        h, w = im_search.size
-        target_img.resize(w, h)
-        confidence = self._cal_confidence(resize_img=target_img, im_search=im_search)
+        confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect)
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
 
@@ -70,10 +67,7 @@ class KeypointMatch(object):
             if not rect:
                 break
 
-            target_img = im_source.crop_image(rect)
-            h, w = im_search.size
-            target_img.resize(w, h)
-            confidence = self._cal_confidence(resize_img=target_img, im_search=im_search)
+            confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect)
             if confidence > threshold:
                 result.append(generate_result(rect, confidence))
 
@@ -87,6 +81,20 @@ class KeypointMatch(object):
                 # 未找到其他匹配区域,退出寻找
                 break
         return result
+
+    def _cal_confidence(self, im_source, im_search, rect):
+        """ 将截图和识别结果缩放到大小一致,并计算可信度 """
+        try:
+            target_img = im_source.crop_image(rect)
+        except OverflowError:
+            raise MatchResultError("Target area({}) out of screen{}".format(rect, im_source.size))
+
+        h, w = im_search.size
+        target_img.resize(w, h)
+
+        confidence = self.template.cal_rgb_confidence(img_src_rgb=im_search, img_sch_rgb=target_img)
+        confidence = (1 + confidence) / 2
+        return confidence
 
     @staticmethod
     def check_detection_input(im_source, im_search) -> Tuple[IMAGE, IMAGE]:
@@ -116,31 +124,6 @@ class KeypointMatch(object):
         else:
             # 匹配点大于4,使用单矩阵映射求出目标区域
             return self._many_good_pts(im_source, im_search, kp_sch, kp_src, good)
-
-    @staticmethod
-    def delect_rect_descriptors(rect, kp, des):
-        tl, br = rect.tl, rect.br
-        kp = kp.copy()
-        des = des.copy()
-
-        delect_list = tuple(kp.index(i) for i in kp if tl.x <= i.pt[0] <= br.x and tl.y <= i.pt[1] <= br.y)
-        for i in sorted(delect_list, reverse=True):
-            kp.pop(i)
-
-        des = numpy.delete(des, delect_list, axis=0)
-        return kp, des
-
-    @staticmethod
-    def delect_good_descriptors(good, kp, des):
-        kp = kp.copy()
-        des = des.copy()
-
-        delect_list = [i.trainIdx for i in good]
-        for i in sorted(delect_list, reverse=True):
-            kp.pop(i)
-
-        des = numpy.delete(des, delect_list, axis=0)
-        return kp, des
 
     @match_time_debug
     def get_rect_from_good_matches(self, im_source, im_search, kp_sch, des_sch, kp_src, des_src):
@@ -174,13 +157,13 @@ class KeypointMatch(object):
         """多组特征点对时，求取单向性矩阵."""
         try:
             M, mask = cv2.findHomography(sch_pts, src_pts, cv2.RANSAC, 5.0)
-        except Exception:
+        except cv2.error:
             import traceback
             traceback.print_exc()
-            raise Exception("OpenCV error in _find_homography()...")
+            raise HomographyError("OpenCV error in _find_homography()...")
         else:
             if mask is None:
-                raise Exception("In _find_homography(), find no mask...")
+                raise HomographyError("In _find_homography(), find no mask...")
             else:
                 return M, mask
 
@@ -189,20 +172,14 @@ class KeypointMatch(object):
             -1, 1, 2), np.float32([kp_src[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
         # M是转化矩阵
         M, mask = self._find_homography(sch_pts, img_pts)
-        matches_mask = mask.ravel().tolist()
-        # 从good中间筛选出更精确的点(假设good中大部分点为正确的，由ratio=0.7保障)
-        selected = [v for k, v in enumerate(good) if matches_mask[k]]
-        # 针对所有的selected点再次计算出更精确的转化矩阵M来
-        sch_pts, img_pts = np.float32([kp_sch[m.queryIdx].pt for m in selected]).reshape(
-            -1, 1, 2), np.float32([kp_src[m.trainIdx].pt for m in selected]).reshape(-1, 1, 2)
-        # M, mask = self._find_homography(sch_pts, img_pts)
         # 计算四个角矩阵变换后的坐标，也就是在大图中的目标区域的顶点坐标:
         h, w = im_search.shape[:2]
         h_s, w_s = im_source.shape[:2]
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-        dst = cv2.perspectiveTransform(pts, M)
-
-        # trans numpy arrary to python list: [(a, b), (a1, b1), ...]
+        try:
+            dst = cv2.perspectiveTransform(pts, M)
+        except cv2.error as err:
+            raise PerspectiveTransformError(err)
 
         def cal_rect_pts(_dst):
             return [tuple(npt[0]) for npt in np.rint(_dst).astype(np.float).tolist()]
@@ -297,7 +274,27 @@ class KeypointMatch(object):
             pypts.append(tuple(npt[0]))
         return Rect(x=x_min, y=y_min, width=(x_max - x_min), height=(y_max - y_min))
 
-    def _cal_confidence(self, im_search, resize_img):
-        confidence = self.template.cal_rgb_confidence(img_src_rgb=im_search, img_sch_rgb=resize_img)
-        confidence = (1 + confidence) / 2
-        return confidence
+    @staticmethod
+    def delect_rect_descriptors(rect, kp, des):
+        tl, br = rect.tl, rect.br
+        kp = kp.copy()
+        des = des.copy()
+
+        delect_list = tuple(kp.index(i) for i in kp if tl.x <= i.pt[0] <= br.x and tl.y <= i.pt[1] <= br.y)
+        for i in sorted(delect_list, reverse=True):
+            kp.pop(i)
+
+        des = numpy.delete(des, delect_list, axis=0)
+        return kp, des
+
+    @staticmethod
+    def delect_good_descriptors(good, kp, des):
+        kp = kp.copy()
+        des = des.copy()
+
+        delect_list = [i.trainIdx for i in good]
+        for i in sorted(delect_list, reverse=True):
+            kp.pop(i)
+
+        des = numpy.delete(des, delect_list, axis=0)
+        return kp, des

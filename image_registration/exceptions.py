@@ -28,3 +28,15 @@ class CudaSuftInputImageError(BaseError):
 
 class CudaOrbDetectorError(BaseError):
     """ An CvError when orb detector error occurred """
+
+
+class HomographyError(BaseError):
+    """ An error occurred while findHomography """
+
+
+class MatchResultError(BaseError):
+    """ An error occurred while result out of screen"""
+
+
+class PerspectiveTransformError(BaseError):
+    """ An error occurred while perspectiveTransform """
