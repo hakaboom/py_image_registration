@@ -16,7 +16,7 @@ class _match_template(object):
         self.threshold = 0.85
 
     @print_best_result
-    def find_template(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
+    def find_best(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
         """
         模板匹配
         :param im_source: 待匹配图像
@@ -41,9 +41,9 @@ class _match_template(object):
         return generate_result(rect, confidence)
 
     @print_all_result
-    def find_templates(self, im_source, im_search, threshold: Union[int, float] = None,
-                       max_count: int = 10,
-                       rgb: bool = True):
+    def find_all(self, im_source, im_search, threshold: Union[int, float] = None,
+                 max_count: int = 10,
+                 rgb: bool = True):
         """
         模板匹配
         :param im_source: 待匹配图像

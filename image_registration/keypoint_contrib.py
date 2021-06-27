@@ -6,20 +6,15 @@ import numpy
 from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
 from .exceptions import (CreateExtractorError, NoModuleError, NoEnoughPointsError,
-                         CudaSuftInputImageError, CudaOrbDetectorError)
+                         CudaSurfInputImageError, CudaOrbDetectorError)
 from typing import Tuple, List
-
-"""
-    cuda_orb 重点需要调整金字塔等级(scaleFactor, nlevels, firstLevel), 在图片过小时, 在detect阶段会报异常
-    同时为了获取到最多的特征,可以调整fastThreshold
-"""
 
 
 class ORB(KeypointMatch):
     METHOD_NAME = "ORB"
 
-    def __init__(self, *args, **kwargs):
-        super(ORB, self).__init__()
+    def __init__(self, threshold=0.8, *args, **kwargs):
+        super(ORB, self).__init__(threshold)
         # 初始化参数
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
 
@@ -63,8 +58,8 @@ class SIFT(KeypointMatch):
     # SIFT识别特征点匹配，参数设置:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, *args, **kwargs):
-        super(SIFT, self).__init__()
+    def __init__(self, threshold=0.8, *args, **kwargs):
+        super(SIFT, self).__init__(threshold)
         # 初始化参数
         kwargs['edgeThreshold'] = kwargs.pop('edgeThreshold', 10)
         # 创建SIFT实例
@@ -107,8 +102,8 @@ class SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, *args, **kwargs):
-        super(SURF, self).__init__()
+    def __init__(self, threshold=0.8, *args, **kwargs):
+        super(SURF, self).__init__(threshold)
         # 初始化参数
         kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
         kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
@@ -122,8 +117,8 @@ class SURF(KeypointMatch):
 class BRIEF(KeypointMatch):
     METHOD_NAME = "BRIEF"
 
-    def __init__(self):
-        super(BRIEF, self).__init__()
+    def __init__(self, threshold=0.8):
+        super(BRIEF, self).__init__(threshold)
         # Initiate FAST detector
         self.star = cv2.xfeatures2d.StarDetector_create()
         # Initiate BRIEF extractor
@@ -147,8 +142,8 @@ class BRIEF(KeypointMatch):
 class AKAZE(KeypointMatch):
     METHOD_NAME = "AKAZE"
 
-    def __init__(self, *args, **kwargs):
-        super(AKAZE, self).__init__()
+    def __init__(self, threshold=0.8, *args, **kwargs):
+        super(AKAZE, self).__init__(threshold)
         # Initiate AKAZE detector
 
         try:
@@ -171,8 +166,8 @@ class CUDA_SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, *args, **kwargs):
-        super(CUDA_SURF, self).__init__()
+    def __init__(self, threshold=0.8, *args, **kwargs):
+        super(CUDA_SURF, self).__init__(threshold)
         # 初始化参数
         kwargs['_hessianThreshold'] = kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD)
         kwargs['_upright'] = kwargs.pop('_upright ', self.UPRIGHT)
@@ -205,7 +200,7 @@ class CUDA_SURF(KeypointMatch):
         try:
             self._check_image_size(im_source)
             self._check_image_size(im_search)
-        except CudaSuftInputImageError:
+        except CudaSurfInputImageError:
             return None, None
         return im_source, im_search
 
@@ -226,9 +221,9 @@ class CUDA_SURF(KeypointMatch):
         min_margin = ((calc_size((self.detector.nOctaves - 1), 2) >> 1) >> (self.detector.nOctaves - 1)) + 1
 
         if image.size[0] - min_size < 0 or image.size[1] - min_size < 0:
-            raise CudaSuftInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
+            raise CudaSurfInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
         if layer_height - 2 * min_margin < 0 or layer_width - 2 * min_margin < 0:
-            raise CudaSuftInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
+            raise CudaSurfInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
 
     def get_rect_from_good_matches(self, im_source, im_search, kp_sch, des_sch, kp_src, des_src):
         matches = self.match_keypoints(des_sch=des_sch, des_src=des_src)
@@ -270,8 +265,8 @@ class CUDA_ORB(KeypointMatch):
     METHOD_NAME = 'CUDA_ORB'
     FILTER_RATIO = 0.59
 
-    def __init__(self, *args, **kwargs):
-        super(CUDA_ORB, self).__init__()
+    def __init__(self, threshold=0.8, *args, **kwargs):
+        super(CUDA_ORB, self).__init__(threshold)
         # 初始化参数
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
         try:
@@ -295,7 +290,7 @@ class CUDA_ORB(KeypointMatch):
         return matcher
 
     def get_keypoints_and_descriptors(self, image: cv2.cuda_GpuMat) -> Tuple[list, cv2.cuda_GpuMat]:
-        # https://github.com/prismai/opencv_contrib/commit/d7d6360fceb5881d596be95b03568d4dcdb7236d
+        # https://github.com/prismai/opencv_contrib/commit/d7d6360fceb5881d596be95b03568d4dcdb7236d#diff-122b9c09d35cd89b7cee1eeb66189e4820f5663bbeda844908f05bf730c93e49
         try:
             keypoints, descriptors = self.detector.detectAndComputeAsync(image, None)
         except cv2.error:
