@@ -87,3 +87,41 @@ orb.find_best(im_source=im_source, im_search=im_search)
 orb.find_all(im_source=im_source, im_search=im_search)
 # 返回结果MatchTemplate
 ```
+
+## Exceptions
+
+1. **NoModuleError** 
+
+模块未找到, 检查opencv库是否安装正确
+
+2. **CreateExtractorError**
+
+创建特征提取器失败, 检查传入参数以及opencv库是否安装正确
+
+3. **NoEnoughPointsError**
+
+当特征提取器提取特殊数量少于2时弹出异常
+
+4. **CudaSurfInputImageError**
+
+图像大小不符合cuda_surf的要求时弹出异常[opencv_surf.cuda](https://github.com/opencv/opencv_contrib/blob/master/modules/xfeatures2d/src/surf.cuda.cpp#L151)
+
+5. **CudaOrbDetectorError**
+
+
+提取特征时出现的错误,需要调整orb的初始参数(scaleFactor, nlevels, firstLevel)
+
+6. **HomographyError**
+
+
+An error occurred while findHomography
+
+7. **MatchResultError**
+
+
+An error occurred while result out of screen
+
+8. **PerspectiveTransformError**
+
+
+An error occurred while perspectiveTransform
