@@ -12,8 +12,8 @@ from typing import Union
 class _match_template(object):
     METHOD_NAME = "tpl"
 
-    def __init__(self):
-        self.threshold = 0.85
+    def __init__(self, *args, **kwargs):
+        self.threshold = kwargs.pop('threshold', 0.85)
 
     @print_best_result
     def find_best(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
@@ -119,8 +119,8 @@ class _match_template(object):
 class _cuda_match_template(_match_template):
     METHOD_NAME = "cuda_tpl"
 
-    def __init__(self):
-        super(_cuda_match_template, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(_cuda_match_template, self).__init__(*args, **kwargs)
         self.matcher = cv2.cuda.createTemplateMatching(cv2.CV_8U, cv2.TM_CCOEFF_NORMED)
 
     @staticmethod
