@@ -16,12 +16,13 @@ class ORB(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(ORB, self).__init__(threshold)
         # 初始化参数
+        kwargs = kwargs.copy()
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
 
         try:
             # 创建ORB实例
             self.detector = cv2.ORB_create(*args, **kwargs)
-        except:
+        except Exception:
             raise CreateExtractorError('create orb extractor error')
         else:
             try:
@@ -61,11 +62,12 @@ class SIFT(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(SIFT, self).__init__(threshold)
         # 初始化参数
+        kwargs = kwargs.copy()
         kwargs['edgeThreshold'] = kwargs.pop('edgeThreshold', 10)
         # 创建SIFT实例
         try:
             self.detector = cv2.SIFT_create(*args, **kwargs)
-        except:
+        except Exception:
             raise CreateExtractorError('create sift extractor error')
 
 
@@ -105,12 +107,13 @@ class SURF(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(SURF, self).__init__(threshold)
         # 初始化参数
+        kwargs = kwargs.copy()
         kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
         kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
 
         try:
             self.detector = cv2.xfeatures2d.SURF_create(*args, **kwargs)
-        except:
+        except Exception:
             raise CreateExtractorError('create surf extractor error')
 
 
@@ -148,7 +151,7 @@ class AKAZE(KeypointMatch):
 
         try:
             self.detector = cv2.AKAZE_create(*args, **kwargs)
-        except:
+        except Exception:
             raise CreateExtractorError('create akaze extractor error')
 
     def create_matcher(self) -> cv2.BFMatcher:
@@ -169,13 +172,14 @@ class CUDA_SURF(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(CUDA_SURF, self).__init__(threshold)
         # 初始化参数
+        kwargs = kwargs.copy()
         kwargs['_hessianThreshold'] = kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD)
         kwargs['_upright'] = kwargs.pop('_upright ', self.UPRIGHT)
         kwargs['_extended'] = kwargs.pop('_extended ', True)
 
         try:
             self.detector = cv2.cuda.SURF_CUDA_create(*args, **kwargs)
-        except:
+        except Exception:
             raise CreateExtractorError('create cuda_surf extractor error')
 
     def find_all(self, im_source, im_search, threshold=None):
@@ -268,11 +272,12 @@ class CUDA_ORB(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(CUDA_ORB, self).__init__(threshold)
         # 初始化参数
+        kwargs = kwargs.copy()
         kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
         try:
             # 创建ORB实例
             self.detector = cv2.cuda_ORB.create(*args, **kwargs)
-        except:
+        except Exception:
             raise CreateExtractorError('create cuda_orb extractor error')
 
     def check_detection_input(self, im_source: IMAGE, im_search: IMAGE) -> Tuple[IMAGE, IMAGE]:
