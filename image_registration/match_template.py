@@ -125,7 +125,11 @@ class _cuda_match_template(_match_template):
 
     @staticmethod
     def check_detection_input(im_source, im_search):
-        im_source, im_search = IMAGE(im_source), IMAGE(im_search)
+        if not isinstance(im_source, IMAGE):
+            im_source = IMAGE(im_source)
+        if not isinstance(im_search, IMAGE):
+            im_search = IMAGE(im_search)
+
         im_source.transform_gpu()
         im_search.transform_gpu()
         return im_source, im_search
