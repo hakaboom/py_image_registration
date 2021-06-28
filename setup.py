@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='py-image-registration',
-    version='1.0.3',
+    version='1.0.5',
     author='hakaboom',
     license="Apache License 2.0",
     author_email='1534225986@qq.com',
@@ -11,5 +11,6 @@ setup(
     packages=['image_registration'],
     install_requires=['colorama>=0.4.4',
                       "loguru>=0.5.3",
+                      "baseImage==1.0.6",
 ],
 )
