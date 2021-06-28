@@ -241,15 +241,9 @@ class CUDA_SURF(KeypointMatch):
 
         im_source.transform_gpu()
         im_search.transform_gpu()
-        im_source, im_search = self.check_image_size(im_source, im_search)
-        return im_source, im_search
 
-    def check_image_size(self, im_source: IMAGE, im_search: IMAGE):
-        try:
-            self._check_image_size(im_source)
-            self._check_image_size(im_search)
-        except CudaSurfInputImageError:
-            return None, None
+        self._check_image_size(im_source)
+        self._check_image_size(im_search)
         return im_source, im_search
 
     def _check_image_size(self, image: IMAGE):
@@ -269,9 +263,11 @@ class CUDA_SURF(KeypointMatch):
         min_margin = ((calc_size((self.detector.nOctaves - 1), 2) >> 1) >> (self.detector.nOctaves - 1)) + 1
 
         if image.size[0] - min_size < 0 or image.size[1] - min_size < 0:
-            raise CudaSurfInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
+            raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to CUDA standard'.
+                                          format(width=image.size[1], height=image.size[0]))
         if layer_height - 2 * min_margin < 0 or layer_width - 2 * min_margin < 0:
-            raise CudaSurfInputImageError('{width}x{height}'.format(width=image.size[1], height=image.size[0]))
+            raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to CUDA standard'.
+                                          format(width=image.size[1], height=image.size[0]))
 
     def get_rect_from_good_matches(self, im_source, im_search, kp_sch, des_sch, kp_src, des_src):
         matches = self.match_keypoints(des_sch=des_sch, des_src=des_src)

@@ -19,7 +19,7 @@ class NoEnoughPointsError(BaseError):
 
 
 class CudaSurfInputImageError(BaseError):
-    """ The image size does not conform to CUDA standard  """
+    """ The image size does not conform to CUDA standard """
     # https://stackoverflow.com/questions/42492060/surf-cuda-error-while-computing-descriptors-and-keypoints
     # https://github.com/opencv/opencv_contrib/blob/master/modules/xfeatures2d/src/surf.cuda.cpp#L151
 
