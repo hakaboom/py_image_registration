@@ -16,12 +16,20 @@ class ORB(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(ORB, self).__init__(threshold)
         # 初始化参数
-        kwargs = kwargs.copy()
-        kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
-
+        self.extractor_parameters = dict(
+            nfeatures=kwargs.pop('nfeatures', 50000),
+            scaleFactor=kwargs.pop('scaleFactor', 1.2),
+            nlevels=kwargs.pop('nlevels', 8),
+            edgeThreshold=kwargs.pop('edgeThreshold', 31),
+            firstLevel=kwargs.pop('firstLevel', 0),
+            WTA_K=kwargs.pop('WTA_K', 2),
+            scoreType=kwargs.pop('scoreType', cv2.ORB_HARRIS_SCORE),
+            patchSize=kwargs.pop('patchSize', 31),
+            fastThreshold=kwargs.pop('fastThreshold', 20),
+        )
         try:
             # 创建ORB实例
-            self.detector = cv2.ORB_create(*args, **kwargs)
+            self.detector = cv2.ORB_create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create orb extractor error')
         else:
@@ -54,17 +62,7 @@ class ORB(KeypointMatch):
         return keypoints, descriptors
 
     def get_extractor_parameters(self):
-        return dict(
-            nfeatures=self.detector.getMaxFeatures(),
-            scaleFactor=self.detector.getScaleFactor(),
-            nlevels=self.detector.getNLevels(),
-            edgeThreshold=self.detector.getEdgeThreshold(),
-            firstLevel=self.detector.getFirstLevel(),
-            WTA_K=self.detector.getWTA_K(),
-            scoreType=self.detector.getScoreType(),
-            patchSize=self.detector.getPatchSize(),
-            fastThreshold=self.detector.getFastThreshold(),
-        )
+        return self.extractor_parameters
 
 
 class SIFT(KeypointMatch):
@@ -75,18 +73,21 @@ class SIFT(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(SIFT, self).__init__(threshold)
         # 初始化参数
-        kwargs = kwargs.copy()
-        kwargs['edgeThreshold'] = kwargs.pop('edgeThreshold', 10)
+        self.extractor_parameters = dict(
+            nfeatures=kwargs.pop('nfeatures', 0),
+            nOctaveLayers=kwargs.pop('nOctaveLayers', 3),
+            contrastThreshold=kwargs.pop('contrastThreshold', 0.04),
+            edgeThreshold=kwargs.pop('edgeThreshold', 10),
+            sigma=kwargs.pop('sigma', 1.6),
+        )
         # 创建SIFT实例
         try:
-            self.detector = cv2.SIFT_create(*args, **kwargs)
+            self.detector = cv2.SIFT_create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create sift extractor error')
 
     def get_extractor_parameters(self):
-        return dict(
-            descriptorSize=self.detector.descriptorSize()
-        )
+        return self.extractor_parameters
 
 
 class RootSIFT(SIFT):
@@ -125,23 +126,20 @@ class SURF(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(SURF, self).__init__(threshold)
         # 初始化参数
-        kwargs = kwargs.copy()
-        kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
-        kwargs['upright'] = kwargs.pop('upright ', self.UPRIGHT)
-
+        self.extractor_parameters = dict(
+            hessianThreshold=kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD),
+            nOctaves=kwargs.pop('nOctaves', 4),
+            nOctaveLayers=kwargs.pop('nOctaveLayers', 3),
+            extended=kwargs.pop('extended', True),
+            upright=kwargs.pop('upright', self.UPRIGHT),
+        )
         try:
-            self.detector = cv2.xfeatures2d.SURF_create(*args, **kwargs)
+            self.detector = cv2.xfeatures2d.SURF_create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create surf extractor error')
 
     def get_extractor_parameters(self):
-        return dict(
-            hessianThreshold=self.detector.getHessianThreshold(),
-            nOctaves=self.detector.getNOctaves(),
-            nOctaveLayers=self.detector.getNOctaveLayers(),
-            extended=self.detector.getExtended(),
-            upright=self.detector.getUpright(),
-        )
+        return self.extractor_parameters
 
 
 class BRIEF(KeypointMatch):
@@ -180,9 +178,17 @@ class AKAZE(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(AKAZE, self).__init__(threshold)
         # Initiate AKAZE detector
-
+        self.extractor_parameters = dict(
+            descriptor_type=kwargs.pop('descriptor_type', cv2.AKAZE_DESCRIPTOR_MLDB),
+            descriptor_size=kwargs.pop('descriptor_size', 0),
+            descriptor_channels=kwargs.pop('descriptor_channels', 3),
+            threshold=kwargs.pop('threshold', 0.001),
+            nOctaves=kwargs.pop('nOctaves', 4),
+            nOctaveLayers=kwargs.pop('nOctaveLayers', 4),
+            diffusivity=kwargs.pop('diffusivity', cv2.KAZE_DIFF_PM_G2),
+        )
         try:
-            self.detector = cv2.AKAZE_create(*args, **kwargs)
+            self.detector = cv2.AKAZE_create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create akaze extractor error')
 
@@ -191,15 +197,7 @@ class AKAZE(KeypointMatch):
         return matcher
 
     def get_extractor_parameters(self):
-        return dict(
-            descriptor_type =self.detector.descriptorSize(),
-            descriptor_size=self.detector.getDescriptorSize(),
-            descriptor_channels=self.detector.getDescriptorChannels(),
-            threshold=self.detector.getThreshold(),
-            nOctaves=self.detector.getNOctaves(),
-            nOctaveLayers=self.detector.getNOctaveLayers(),
-            diffusivity=self.detector.getDiffusivity(),
-        )
+        return self.extractor_parameters
 
 
 class CUDA_SURF(KeypointMatch):
@@ -215,13 +213,16 @@ class CUDA_SURF(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(CUDA_SURF, self).__init__(threshold)
         # 初始化参数
-        kwargs = kwargs.copy()
-        kwargs['_hessianThreshold'] = kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD)
-        kwargs['_upright'] = kwargs.pop('_upright ', self.UPRIGHT)
-        kwargs['_extended'] = kwargs.pop('_extended ', True)
+        self.extractor_parameters = dict(
+            _hessianThreshold=kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD),
+            _nOctaves=kwargs.pop('_nOctaves ', 4),
+            _nOctaveLayers=kwargs.pop('_nOctaveLayers ', 2),
+            _extended=kwargs.pop('_extended ', True),
+            _upright=kwargs.pop('_upright ', self.UPRIGHT),
+        )
 
         try:
-            self.detector = cv2.cuda.SURF_CUDA_create(*args, **kwargs)
+            self.detector = cv2.cuda.SURF_CUDA_create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create cuda_surf extractor error')
 
@@ -304,13 +305,7 @@ class CUDA_SURF(KeypointMatch):
         return keypoints, descriptors
 
     def get_extractor_parameters(self):
-        return dict(
-            hessianThreshold=self.detector.getHessianThreshold(),
-            nOctaves=self.detector.getNOctaves(),
-            nOctaveLayers=self.detector.getNOctaveLayers(),
-            extended=self.detector.getExtended(),
-            upright=self.detector.getUpright(),
-        )
+        return self.extractor_parameters
 
 
 class CUDA_ORB(KeypointMatch):
@@ -324,11 +319,21 @@ class CUDA_ORB(KeypointMatch):
     def __init__(self, threshold=0.8, *args, **kwargs):
         super(CUDA_ORB, self).__init__(threshold)
         # 初始化参数
-        kwargs = kwargs.copy()
-        kwargs['nfeatures'] = kwargs.pop('nfeatures', 50000)
+        self.extractor_parameters = dict(
+            nfeatures=kwargs.pop('nfeatures', 50000),
+            scaleFactor=kwargs.pop('scaleFactor', 1.2),
+            nlevels=kwargs.pop('nlevels', 8),
+            edgeThreshold=kwargs.pop('edgeThreshold', 31),
+            firstLevel=kwargs.pop('firstLevel', 0),
+            WTA_K=kwargs.pop('WTA_K', 2),
+            scoreType=kwargs.pop('scoreType', cv2.ORB_HARRIS_SCORE),
+            patchSize=kwargs.pop('patchSize', 31),
+            fastThreshold=kwargs.pop('fastThreshold', 20),
+            blurForDescriptor=kwargs.pop('blurForDescriptor', False),
+        )
         try:
             # 创建ORB实例
-            self.detector = cv2.cuda_ORB.create(*args, **kwargs)
+            self.detector = cv2.cuda_ORB.create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create cuda_orb extractor error')
 
@@ -394,15 +399,4 @@ class CUDA_ORB(KeypointMatch):
         return kp, mat
 
     def get_extractor_parameters(self):
-        return dict(
-            nfeatures=self.detector.getMaxFeatures(),
-            scaleFactor=self.detector.getScaleFactor(),
-            nlevels=self.detector.getNLevels(),
-            edgeThreshold=self.detector.getEdgeThreshold(),
-            firstLevel=self.detector.getFirstLevel(),
-            WTA_K=self.detector.getWTA_K(),
-            scoreType=self.detector.getScoreType(),
-            patchSize=self.detector.getPatchSize(),
-            fastThreshold=self.detector.getFastThreshold(),
-            blurForDescriptor=self.detector.getBlurForDescriptor(),
-        )
+        return self.extractor_parameters
