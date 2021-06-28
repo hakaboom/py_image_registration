@@ -96,5 +96,5 @@ def _try_find_best(func, im_source, im_search):
         return match_result
 
 
-ret = cv_match(im_source=img_source, im_search=img_search)
-logger.info(ret)
+# ret = cv_match(im_source=img_source, im_search=img_search)
+# logger.info(ret)

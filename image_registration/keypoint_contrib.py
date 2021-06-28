@@ -263,10 +263,10 @@ class CUDA_SURF(KeypointMatch):
         min_margin = ((calc_size((self.detector.nOctaves - 1), 2) >> 1) >> (self.detector.nOctaves - 1)) + 1
 
         if image.size[0] - min_size < 0 or image.size[1] - min_size < 0:
-            raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to CUDA standard'.
+            raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to SURF_CUDA standard'.
                                           format(width=image.size[1], height=image.size[0]))
         if layer_height - 2 * min_margin < 0 or layer_width - 2 * min_margin < 0:
-            raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to CUDA standard'.
+            raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to SURF_CUDA standard'.
                                           format(width=image.size[1], height=image.size[0]))
 
     def get_rect_from_good_matches(self, im_source, im_search, kp_sch, des_sch, kp_src, des_src):
@@ -352,8 +352,9 @@ class CUDA_ORB(KeypointMatch):
         try:
             keypoints, descriptors = self.detector.detectAndComputeAsync(image, None)
         except cv2.error:
-            raise CudaOrbDetectorError('adjust detector params')
-        keypoints = self.detector.convert(keypoints)
+            raise CudaOrbDetectorError('{} detect error, Try adjust detector params'.format(self.METHOD_NAME))
+        else:
+            keypoints = self.detector.convert(keypoints)
 
         if len(keypoints) < 2:
             raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
