@@ -1,4 +1,5 @@
 import time
+import re
 from loguru import logger
 from baseImage import IMAGE
 import cv2
@@ -73,3 +74,47 @@ def print_all_result(func):
         return result
 
     return wrapper
+
+
+def get_type(value):
+    s = re.findall(r'<class \'(.+?)\'>', str(type(value)))
+    if s:
+        return s[0]
+    else:
+        raise ValueError('unknown error,can not get type: value={}, type={}'.format(value, type(value)))
+
+
+def get_space(SpaceNum=1):
+    return '\t'*SpaceNum
+
+
+def pprint(*args):
+    _str = []
+    for index, value in enumerate(args):
+        if isinstance(value, (dict, tuple, list)):
+            _str.append('[{index}]({type}) = {value}\n'.format(index=index, value=_print(value),
+                                                                     type=get_type(value)))
+        else:
+            _str.append('[{index}]({type}) = {value}\n'.format(index=index, value=value,
+                                                                   type=get_type(value)))
+    print(''.join(_str))
+
+
+def _print(args, SpaceNum=1):
+    _str = []
+    SpaceNum += 1
+    if isinstance(args, (tuple, list)):
+        _str.append('')
+        for index, value in enumerate(args):
+            _str.append('{space}[{index}]({type}) = {value}'.format(index=index, value=_print(value, SpaceNum),
+                                                                    type=get_type(value), space=get_space(SpaceNum)))
+    elif isinstance(args, dict):
+        _str.append('')
+        for key, value in args.items():
+            _str.append('{space}[{key}]({type}) = {value}'.format(key=key, value=_print(value,SpaceNum),
+                                                                  type=get_type(value), space=get_space(SpaceNum)))
+    else:
+        _str.append(str(args))
+
+    return '\n'.join(_str)
+

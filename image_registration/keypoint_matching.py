@@ -136,7 +136,7 @@ class KeypointMatch(object):
         keypoints, descriptors = self.detector.detectAndCompute(image, None)
 
         if len(keypoints) < 2:
-            raise NoEnoughPointsError
+            raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
 
     def match_keypoints(self, des_sch: numpy.ndarray, des_src: numpy.ndarray) -> List[List[cv2.DMatch]]:
@@ -298,3 +298,13 @@ class KeypointMatch(object):
 
         des = numpy.delete(des, delect_list, axis=0)
         return kp, des
+
+    def get_extractor_parameters(self):
+        return dict(
+            extended=self.detector.getExtended(),
+            upright=self.detector.getUpright(),
+            threshold=self.detector.getThreshold(),
+            nOctaves=self.detector.getNOctaves(),
+            nOctaveLayers=self.detector.getNOctaveLayers(),
+            diffusivity=self.detector.getDiffusivity(),
+        )

@@ -50,8 +50,21 @@ class ORB(KeypointMatch):
         keypoints, descriptors = self.descriptor.compute(image, keypoints)
 
         if len(keypoints) < 2:
-            raise NoEnoughPointsError('detect not enough feature points in input images')
+            raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
+
+    def get_extractor_parameters(self):
+        return dict(
+            nfeatures=self.detector.getMaxFeatures(),
+            scaleFactor=self.detector.getScaleFactor(),
+            nlevels=self.detector.getNLevels(),
+            edgeThreshold=self.detector.getEdgeThreshold(),
+            firstLevel=self.detector.getFirstLevel(),
+            WTA_K=self.detector.getWTA_K(),
+            scoreType=self.detector.getScoreType(),
+            patchSize=self.detector.getPatchSize(),
+            fastThreshold=self.detector.getFastThreshold(),
+        )
 
 
 class SIFT(KeypointMatch):
@@ -70,6 +83,11 @@ class SIFT(KeypointMatch):
         except Exception:
             raise CreateExtractorError('create sift extractor error')
 
+    def get_extractor_parameters(self):
+        return dict(
+            descriptorSize=self.detector.descriptorSize()
+        )
+
 
 class RootSIFT(SIFT):
     METHOD_NAME = 'RootSIFT'
@@ -79,7 +97,7 @@ class RootSIFT(SIFT):
         keypoints, descriptors = self.rootSIFT_compute(image, keypoints)
 
         if len(keypoints) < 2:
-            raise NoEnoughPointsError('detect not enough feature points in input images')
+            raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
 
     def rootSIFT_compute(self, image, kps, eps=1e-7):
@@ -109,23 +127,32 @@ class SURF(KeypointMatch):
         # 初始化参数
         kwargs = kwargs.copy()
         kwargs['hessianThreshold'] = kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD)
-        kwargs['upright '] = kwargs.pop('upright ', self.UPRIGHT)
+        kwargs['upright'] = kwargs.pop('upright ', self.UPRIGHT)
 
         try:
             self.detector = cv2.xfeatures2d.SURF_create(*args, **kwargs)
         except Exception:
             raise CreateExtractorError('create surf extractor error')
 
+    def get_extractor_parameters(self):
+        return dict(
+            hessianThreshold=self.detector.getHessianThreshold(),
+            nOctaves=self.detector.getNOctaves(),
+            nOctaveLayers=self.detector.getNOctaveLayers(),
+            extended=self.detector.getExtended(),
+            upright=self.detector.getUpright(),
+        )
+
 
 class BRIEF(KeypointMatch):
     METHOD_NAME = "BRIEF"
 
-    def __init__(self, threshold=0.8):
+    def __init__(self, threshold=0.8, *args, **kwargs):
         super(BRIEF, self).__init__(threshold)
         # Initiate FAST detector
         self.star = cv2.xfeatures2d.StarDetector_create()
         # Initiate BRIEF extractor
-        self.detector = cv2.xfeatures2d.BriefDescriptorExtractor_create()
+        self.detector = cv2.xfeatures2d.BriefDescriptorExtractor_create(*args, **kwargs)
 
     def create_matcher(self) -> cv2.BFMatcher:
         matcher = cv2.BFMatcher_create(cv2.NORM_L1)
@@ -138,8 +165,13 @@ class BRIEF(KeypointMatch):
         keypoints, descriptors = self.detector.compute(image, kp)
 
         if len(keypoints) < 2:
-            raise NoEnoughPointsError('detect not enough feature points in input images')
+            raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
+
+    def get_extractor_parameters(self):
+        return dict(
+            descriptorSize=self.detector.descriptorSize()
+        )
 
 
 class AKAZE(KeypointMatch):
@@ -157,6 +189,17 @@ class AKAZE(KeypointMatch):
     def create_matcher(self) -> cv2.BFMatcher:
         matcher = cv2.BFMatcher_create(cv2.NORM_L1)
         return matcher
+
+    def get_extractor_parameters(self):
+        return dict(
+            descriptor_type =self.detector.descriptorSize(),
+            descriptor_size=self.detector.getDescriptorSize(),
+            descriptor_channels=self.detector.getDescriptorChannels(),
+            threshold=self.detector.getThreshold(),
+            nOctaves=self.detector.getNOctaves(),
+            nOctaveLayers=self.detector.getNOctaveLayers(),
+            diffusivity=self.detector.getDiffusivity(),
+        )
 
 
 class CUDA_SURF(KeypointMatch):
@@ -257,8 +300,17 @@ class CUDA_SURF(KeypointMatch):
         keypoints, descriptors = self.detector.detectWithDescriptors(image, None)
 
         if keypoints.size()[0] < 2:
-            raise NoEnoughPointsError('detect not enough feature points in input images')
+            raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
+
+    def get_extractor_parameters(self):
+        return dict(
+            hessianThreshold=self.detector.getHessianThreshold(),
+            nOctaves=self.detector.getNOctaves(),
+            nOctaveLayers=self.detector.getNOctaveLayers(),
+            extended=self.detector.getExtended(),
+            upright=self.detector.getUpright(),
+        )
 
 
 class CUDA_ORB(KeypointMatch):
@@ -303,7 +355,7 @@ class CUDA_ORB(KeypointMatch):
         keypoints = self.detector.convert(keypoints)
 
         if len(keypoints) < 2:
-            raise NoEnoughPointsError('detect not enough feature points in input images')
+            raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
 
     def match_keypoints(self, des_sch: cv2.cuda_GpuMat, des_src: cv2.cuda_GpuMat) -> List[List[cv2.DMatch]]:
@@ -340,3 +392,17 @@ class CUDA_ORB(KeypointMatch):
         mat = cv2.cuda_GpuMat()
         mat.upload(des)
         return kp, mat
+
+    def get_extractor_parameters(self):
+        return dict(
+            nfeatures=self.detector.getMaxFeatures(),
+            scaleFactor=self.detector.getScaleFactor(),
+            nlevels=self.detector.getNLevels(),
+            edgeThreshold=self.detector.getEdgeThreshold(),
+            firstLevel=self.detector.getFirstLevel(),
+            WTA_K=self.detector.getWTA_K(),
+            scoreType=self.detector.getScoreType(),
+            patchSize=self.detector.getPatchSize(),
+            fastThreshold=self.detector.getFastThreshold(),
+            blurForDescriptor=self.detector.getBlurForDescriptor(),
+        )
