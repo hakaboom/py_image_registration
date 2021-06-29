@@ -7,14 +7,14 @@ from .keypoint_matching import KeypointMatch
 from baseImage import IMAGE
 from .exceptions import (CreateExtractorError, NoModuleError, NoEnoughPointsError,
                          CudaSurfInputImageError, CudaOrbDetectorError)
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 
 class ORB(KeypointMatch):
     METHOD_NAME = "ORB"
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(ORB, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(ORB, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
             nfeatures=kwargs.pop('nfeatures', 50000),
@@ -70,8 +70,8 @@ class SIFT(KeypointMatch):
     # SIFT识别特征点匹配，参数设置:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(SIFT, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(SIFT, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
             nfeatures=kwargs.pop('nfeatures', 0),
@@ -123,8 +123,8 @@ class SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(SURF, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(SURF, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
             hessianThreshold=kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD),
@@ -145,8 +145,8 @@ class SURF(KeypointMatch):
 class BRIEF(KeypointMatch):
     METHOD_NAME = "BRIEF"
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(BRIEF, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(BRIEF, self).__init__(threshold, rgb)
         # Initiate FAST detector
         self.star = cv2.xfeatures2d.StarDetector_create()
         # Initiate BRIEF extractor
@@ -175,8 +175,8 @@ class BRIEF(KeypointMatch):
 class AKAZE(KeypointMatch):
     METHOD_NAME = "AKAZE"
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(AKAZE, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(AKAZE, self).__init__(threshold, rgb)
         # Initiate AKAZE detector
         self.extractor_parameters = dict(
             descriptor_type=kwargs.pop('descriptor_type', cv2.AKAZE_DESCRIPTOR_MLDB),
@@ -210,8 +210,8 @@ class CUDA_SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(CUDA_SURF, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(CUDA_SURF, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
             _hessianThreshold=kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD),
@@ -312,8 +312,8 @@ class CUDA_ORB(KeypointMatch):
     METHOD_NAME = 'CUDA_ORB'
     FILTER_RATIO = 0.59
 
-    def __init__(self, threshold=0.8, *args, **kwargs):
-        super(CUDA_ORB, self).__init__(threshold)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(CUDA_ORB, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
             nfeatures=kwargs.pop('nfeatures', 50000),

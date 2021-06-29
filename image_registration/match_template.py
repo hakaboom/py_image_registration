@@ -12,8 +12,9 @@ from typing import Union
 class _match_template(object):
     METHOD_NAME = "tpl"
 
-    def __init__(self, *args, **kwargs):
-        self.threshold = kwargs.pop('threshold', 0.85)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        self.threshold = threshold
+        self.rgb = rgb
 
     @print_best_result
     def find_best(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
@@ -34,6 +35,7 @@ class _match_template(object):
         img_crop = im_source.crop_image(Rect(max_loc[0], max_loc[1], w, h))
         confidence = self._get_confidence_from_matrix(img_crop, im_search, max_val=max_val, rgb=rgb)
         # 如果可信度小于threshold,则返回None
+
         if confidence < (threshold or self.threshold):
             return None
         x, y = max_loc
@@ -89,8 +91,8 @@ class _match_template(object):
         return im_source, im_search
 
     @staticmethod
-    def cal_rgb_confidence(img_src_rgb, img_sch_rgb):
-        img_src_rgb, img_sch_rgb = img_src_rgb.imread(), img_sch_rgb.imread()
+    def cal_rgb_confidence(im_source, im_search):
+        img_src_rgb, img_sch_rgb = im_source.imread(), im_search.imread()
         img_sch_rgb = cv2.copyMakeBorder(img_sch_rgb, 10, 10, 10, 10, cv2.BORDER_REPLICATE)
         # 转HSV强化颜色的影响
         img_src_rgb = cv2.cvtColor(img_src_rgb, cv2.COLOR_BGR2HSV)
@@ -105,6 +107,17 @@ class _match_template(object):
         return min(bgr_confidence)
 
     @staticmethod
+    def cal_ccoeff_confidence(im_source, im_search):
+        img_src_gray, img_sch_gray = im_source.rgb_2_gray(), im_search.rgb_2_gray()
+        # 扩展置信度计算区域
+        img_sch_gray = cv2.copyMakeBorder(img_sch_gray, 10, 10, 10, 10, cv2.BORDER_REPLICATE)
+
+        res = cv2.matchTemplate(img_src_gray, img_sch_gray, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+        return max_val
+
+    @staticmethod
     def _get_confidence_from_matrix(img_crop, im_search, max_val, rgb):
         """根据结果矩阵求出confidence."""
         # 求取可信度:
@@ -115,12 +128,16 @@ class _match_template(object):
             confidence = max_val
         return confidence
 
+    @staticmethod
+    def get_extractor_parameters():
+        return 'template'
+
 
 class _cuda_match_template(_match_template):
     METHOD_NAME = "cuda_tpl"
 
-    def __init__(self, *args, **kwargs):
-        super(_cuda_match_template, self).__init__(*args, **kwargs)
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+        super(_cuda_match_template, self).__init__(threshold, rgb, *args, **kwargs)
         self.matcher = cv2.cuda.createTemplateMatching(cv2.CV_8U, cv2.TM_CCOEFF_NORMED)
 
     @staticmethod

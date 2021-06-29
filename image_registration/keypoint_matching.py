@@ -5,7 +5,8 @@ import cv2
 import numpy
 import numpy as np
 from .utils import generate_result, match_time_debug, print_all_result, print_best_result
-from .exceptions import NoEnoughPointsError, HomographyError, MatchResultError, PerspectiveTransformError
+from .exceptions import (NoEnoughPointsError, HomographyError, MatchResultError, PerspectiveTransformError,
+                         CreateExtractorError)
 from .match_template import match_template
 from baseImage import IMAGE, Rect, Point, Size
 from loguru import logger
@@ -18,10 +19,14 @@ class KeypointMatch(object):
     METHOD_NAME = 'KeypointMatch'
     template = match_template()
 
-    def __init__(self, threshold: Union[int, float] = 0.8):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True):
         self.threshold = threshold
-        self.matcher = self.create_matcher()
+        self.rgb = rgb
         self.detector = cv2.KAZE_create()
+        try:
+            self.matcher = self.create_matcher()
+        except AttributeError:
+            raise CreateExtractorError('create matcher error')
 
     def create_matcher(self) -> cv2.FlannBasedMatcher:
         index_params = {'algorithm': self.FLANN_INDEX_KDTREE, 'tree': 5}
@@ -31,9 +36,12 @@ class KeypointMatch(object):
         return matcher
 
     @print_best_result
-    def find_best(self, im_source, im_search, threshold: Union[int, float] = None):
+    def find_best(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = None):
         """在im_source中找到最符合im_search的范围"""
+        # 初始化参数
         threshold = threshold is None and self.threshold or threshold
+        rgb = rgb is None and self.rgb or rgb
+
         im_source, im_search = self.check_detection_input(im_source, im_search)
         if not im_source or not im_search:
             return None
@@ -45,13 +53,17 @@ class KeypointMatch(object):
         if not rect:
             return None
         # 第三步, 从匹配图片截取矩阵范围,并缩放到模板大小,进行模板匹配求出相似度
-        confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect)
+        confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect, rgb=rgb)
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
 
     @print_all_result
-    def find_all(self, im_source, im_search, threshold: Union[int, float] = None):
-        threshold = threshold is None and self.threshold or threshold
+    def find_all(self, im_source, im_search, threshold: Union[int, float] = None,
+                 max_count: int = 10,
+                 rgb: bool = None):
+        threshold = threshold or self.threshold
+        rgb = rgb is None and self.rgb or rgb
+
         im_source, im_search = self.check_detection_input(im_source, im_search)
         if not im_source or not im_search:
             return None
@@ -67,22 +79,17 @@ class KeypointMatch(object):
             if not rect:
                 break
 
-            confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect)
-            if confidence > threshold:
+            confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect, rgb=rgb)
+
+            if confidence > threshold and len(result) < max_count:
                 result.append(generate_result(rect, confidence))
 
-                kp_src, des_src = self.delect_good_descriptors(good, kp_src, des_src)
-                # 无特征点时, 结束函数
-                if len(kp_src) < 2 or len(kp_sch) < 2:
-                    break
+            kp_src, des_src = self.delect_good_descriptors(good, kp_src, des_src)
+            kp_src, des_src = self.delect_rect_descriptors(rect, kp_src, des_src)
 
-                kp_src, des_src = self.delect_rect_descriptors(rect, kp_src, des_src)
-            else:
-                # 未找到其他匹配区域,退出寻找
-                break
         return result
 
-    def _cal_confidence(self, im_source, im_search, rect):
+    def _cal_confidence(self, im_source, im_search, rect: Rect, rgb: bool):
         """ 将截图和识别结果缩放到大小一致,并计算可信度 """
         try:
             target_img = im_source.crop_image(rect)
@@ -92,7 +99,11 @@ class KeypointMatch(object):
         h, w = im_search.size
         target_img.resize(w, h)
 
-        confidence = self.template.cal_rgb_confidence(img_src_rgb=im_search, img_sch_rgb=target_img)
+        if rgb:
+            confidence = self.template.cal_rgb_confidence(im_source=im_search, im_search=target_img)
+        else:
+            confidence = self.template.cal_ccoeff_confidence(im_source=im_search, im_search=target_img)
+
         confidence = (1 + confidence) / 2
         return confidence
 
