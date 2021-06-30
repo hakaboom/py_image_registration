@@ -13,19 +13,16 @@ from typing import Tuple, List, Union
 class ORB(KeypointMatch):
     METHOD_NAME = "ORB"
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True,
+                 nfeatures: int = 50000, scaleFactor: Union[int, float] = 1.2, nlevels: int = 8,
+                 edgeThreshold: int = 31, firstLevel: int = 0, WTA_K: int = 2,
+                 scoreType: int = cv2.ORB_HARRIS_SCORE, patchSize: int = 31, fastThreshold: int = 20):
         super(ORB, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
-            nfeatures=kwargs.pop('nfeatures', 50000),
-            scaleFactor=kwargs.pop('scaleFactor', 1.2),
-            nlevels=kwargs.pop('nlevels', 8),
-            edgeThreshold=kwargs.pop('edgeThreshold', 31),
-            firstLevel=kwargs.pop('firstLevel', 0),
-            WTA_K=kwargs.pop('WTA_K', 2),
-            scoreType=kwargs.pop('scoreType', cv2.ORB_HARRIS_SCORE),
-            patchSize=kwargs.pop('patchSize', 31),
-            fastThreshold=kwargs.pop('fastThreshold', 20),
+            nfeatures=nfeatures, scaleFactor=scaleFactor, nlevels=nlevels,
+            edgeThreshold=edgeThreshold, firstLevel=firstLevel, WTA_K=WTA_K,
+            scoreType=scoreType, patchSize=patchSize, fastThreshold=fastThreshold,
         )
         try:
             # 创建ORB实例
@@ -70,15 +67,14 @@ class SIFT(KeypointMatch):
     # SIFT识别特征点匹配，参数设置:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True,
+                 nfeature: int = 0, nOctaveLayers: int = 3, contrastThreshold: float = 0.04, edgeThreshold: int = 10,
+                 sigma: Union[int, float] = 1.6, descriptorType: int = cv2.CV_32F):
         super(SIFT, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
-            nfeatures=kwargs.pop('nfeatures', 0),
-            nOctaveLayers=kwargs.pop('nOctaveLayers', 3),
-            contrastThreshold=kwargs.pop('contrastThreshold', 0.04),
-            edgeThreshold=kwargs.pop('edgeThreshold', 10),
-            sigma=kwargs.pop('sigma', 1.6),
+            nfeatures=nfeature, nOctaveLayers=nOctaveLayers, contrastThreshold=contrastThreshold,
+            edgeThreshold=edgeThreshold, sigma=sigma, descriptorType=descriptorType
         )
         # 创建SIFT实例
         try:
@@ -116,22 +112,17 @@ class RootSIFT(SIFT):
 class SURF(KeypointMatch):
     # https://docs.opencv.org/master/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html
     METHOD_NAME = "SURF"
-    # 方向不变性:0检测/1不检测
-    UPRIGHT = 0
-    # 检测器仅保留其hessian大于hessianThreshold的要素,值越大,获得的关键点就越少
-    HESSIAN_THRESHOLD = 400
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True,
+                 hessianThreshold: int = 400, nOctaves: int = 4, nOctaveLayers: int = 3,
+                 extended: bool = True, upright: bool = False):
         super(SURF, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
-            hessianThreshold=kwargs.pop('hessianThreshold', self.HESSIAN_THRESHOLD),
-            nOctaves=kwargs.pop('nOctaves', 4),
-            nOctaveLayers=kwargs.pop('nOctaveLayers', 3),
-            extended=kwargs.pop('extended', True),
-            upright=kwargs.pop('upright', self.UPRIGHT),
+            hessianThreshold=hessianThreshold, nOctaves=nOctaves, nOctaveLayers=nOctaveLayers,
+            extended=extended, upright=upright,
         )
         try:
             self.detector = cv2.xfeatures2d.SURF_create(**self.extractor_parameters)
@@ -150,7 +141,7 @@ class BRIEF(KeypointMatch):
         # Initiate FAST detector
         self.star = cv2.xfeatures2d.StarDetector_create()
         # Initiate BRIEF extractor
-        self.detector = cv2.xfeatures2d.BriefDescriptorExtractor_create(*args, **kwargs)
+        self.detector = cv2.xfeatures2d.BriefDescriptorExtractor_create()
 
     def create_matcher(self) -> cv2.BFMatcher:
         matcher = cv2.BFMatcher_create(cv2.NORM_L1)
@@ -175,17 +166,16 @@ class BRIEF(KeypointMatch):
 class AKAZE(KeypointMatch):
     METHOD_NAME = "AKAZE"
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True,
+                 descriptor_type: int = cv2.AKAZE_DESCRIPTOR_MLDB,
+                 descriptor_size: int = 0, descriptor_channels: int = 3,
+                 _threshold: float = 0.001, nOctaves: int = 4, nOctaveLayers: int = 4,
+                 diffusivity: int = cv2.KAZE_DIFF_PM_G2):
         super(AKAZE, self).__init__(threshold, rgb)
-        # Initiate AKAZE detector
         self.extractor_parameters = dict(
-            descriptor_type=kwargs.pop('descriptor_type', cv2.AKAZE_DESCRIPTOR_MLDB),
-            descriptor_size=kwargs.pop('descriptor_size', 0),
-            descriptor_channels=kwargs.pop('descriptor_channels', 3),
-            threshold=kwargs.pop('threshold', 0.001),
-            nOctaves=kwargs.pop('nOctaves', 4),
-            nOctaveLayers=kwargs.pop('nOctaveLayers', 4),
-            diffusivity=kwargs.pop('diffusivity', cv2.KAZE_DIFF_PM_G2),
+            descriptor_type=descriptor_type, descriptor_size=descriptor_size, descriptor_channels=descriptor_channels,
+            threshold=_threshold, diffusivity=diffusivity,
+            nOctaves=nOctaves, nOctaveLayers=nOctaveLayers,
         )
         try:
             self.detector = cv2.AKAZE_create(**self.extractor_parameters)
@@ -210,23 +200,20 @@ class CUDA_SURF(KeypointMatch):
     # SURF识别特征点匹配:
     FLANN_INDEX_KDTREE = 0
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True,
+                 _hessianThreshold=400, _nOctaves=4, _nOctaveLayers=2, _extended=True, _upright=False):
         super(CUDA_SURF, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
-            _hessianThreshold=kwargs.pop('_hessianThreshold', self.HESSIAN_THRESHOLD),
-            _nOctaves=kwargs.pop('_nOctaves ', 4),
-            _nOctaveLayers=kwargs.pop('_nOctaveLayers ', 2),
-            _extended=kwargs.pop('_extended ', True),
-            _upright=kwargs.pop('_upright ', self.UPRIGHT),
+            _hessianThreshold=_hessianThreshold, _nOctaves=_nOctaves, _nOctaveLayers=_nOctaveLayers,
+            _extended=_extended, _upright=_upright,
         )
-
         try:
             self.detector = cv2.cuda.SURF_CUDA_create(**self.extractor_parameters)
         except Exception:
             raise CreateExtractorError('create cuda_surf extractor error')
 
-    def find_all(self, im_source, im_search, threshold=None):
+    def find_all(self, im_source, im_search, threshold=None, max_count=None, rgb=None):
         raise NotImplementedError
 
     def create_matcher(self):
@@ -304,6 +291,13 @@ class CUDA_SURF(KeypointMatch):
         return self.extractor_parameters
 
 
+"""
+[ORB_GPU会随机生成特征点]https://github.com/opencv/opencv/issues/6362
+
+[ORB_GPU在detect时的边界条件]https://github.com/opencv/opencv/issues/10573
+"""
+
+
 class CUDA_ORB(KeypointMatch):
     """
     cuda_orb在图像大小太小时,在detect阶段会出现ROI报错
@@ -312,20 +306,18 @@ class CUDA_ORB(KeypointMatch):
     METHOD_NAME = 'CUDA_ORB'
     FILTER_RATIO = 0.59
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True,
+                 nfeatures: int = 50000, scaleFactor: Union[int, float] = 1.2, nlevels: int = 8,
+                 edgeThreshold: int = 31, firstLevel: int = 0, WTA_K: int = 2,
+                 scoreType: int = cv2.ORB_HARRIS_SCORE, patchSize: int = 31, fastThreshold: int = 20,
+                 blurForDescriptor: bool = False):
         super(CUDA_ORB, self).__init__(threshold, rgb)
         # 初始化参数
         self.extractor_parameters = dict(
-            nfeatures=kwargs.pop('nfeatures', 50000),
-            scaleFactor=kwargs.pop('scaleFactor', 1.2),
-            nlevels=kwargs.pop('nlevels', 8),
-            edgeThreshold=kwargs.pop('edgeThreshold', 31),
-            firstLevel=kwargs.pop('firstLevel', 0),
-            WTA_K=kwargs.pop('WTA_K', 2),
-            scoreType=kwargs.pop('scoreType', cv2.ORB_HARRIS_SCORE),
-            patchSize=kwargs.pop('patchSize', 31),
-            fastThreshold=kwargs.pop('fastThreshold', 20),
-            blurForDescriptor=kwargs.pop('blurForDescriptor', False),
+            nfeatures=nfeatures, scaleFactor=scaleFactor, nlevels=nlevels,
+            edgeThreshold=edgeThreshold, firstLevel=firstLevel, WTA_K=WTA_K,
+            scoreType=scoreType, patchSize=patchSize, fastThreshold=fastThreshold,
+            blurForDescriptor=blurForDescriptor,
         )
         try:
             # 创建ORB实例

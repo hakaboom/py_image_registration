@@ -11,15 +11,17 @@ from collections import OrderedDict
 from image_registration import match_template, ORB, CUDA_ORB, RootSIFT, CUDA_SURF, SURF
 from image_registration.exceptions import NoEnoughPointsError, CreateExtractorError, BaseError
 from image_registration.utils import pprint
+from typing import Union
 
 
-CVSTRATEGY = [ORB, RootSIFT]
+CVSTRATEGY = [SURF]
 if cv2.cuda.getCudaEnabledDeviceCount() > 0:
-    CVSTRATEGY = [match_template, CUDA_ORB, RootSIFT]
+    CVSTRATEGY = [SURF]
 CVPARAMS = {
+    'SURF': dict(upright=True),
     'ORB': [
         dict(nfeatures=60000),
-        dict(nfeatures=60000, scaleFactor=2, nlevels=2, firstLevel=2),
+        dict(nfeatures=60000, scaleFactor=2, nlevels=2, firstLevel=1),
         dict(nfeatures=60000, scaleFactor=2, nlevels=4, firstLevel=2),
     ]
 }
@@ -31,7 +33,7 @@ class Match(object):
         self.rgb = rgb
         self.match_methods = self.init_matching_methods()
 
-    def find_best(self, im_source, im_search, threshold=None, rgb=None):
+    def find_best(self, im_source, im_search, threshold: Union[int, float] = 0.8, rgb: bool = True,):
         # 初始化参数
         threshold = threshold is None and self.threshold or threshold
         rgb = rgb is None and self.rgb or rgb
@@ -51,16 +53,7 @@ class Match(object):
 
         return None
 
-    def _try_find_best(self, func, im_source, im_search, threshold, rgb):
-        try:
-            match_result = func.find_best(im_source=im_source, im_search=im_search, threshold=threshold, rgb=rgb)
-        except BaseError as err:
-            logger.error('{} param:{}', err, func.get_extractor_parameters())
-            return None
-        else:
-            return match_result
-
-    def find_all(self, im_source, im_search, threshold=None, rgb=None, max_count=10):
+    def find_all(self, im_source, im_search, threshold: Union[int, float] = 0.8, rgb: bool = True, max_count: int = 10):
         threshold = threshold is None and self.threshold or threshold
         rgb = rgb is None and self.rgb or rgb
 
@@ -78,6 +71,15 @@ class Match(object):
                     return result
 
         return None
+
+    def _try_find_best(self, func, im_source, im_search, threshold, rgb):
+        try:
+            match_result = func.find_best(im_source=im_source, im_search=im_search, threshold=threshold, rgb=rgb)
+        except BaseError as err:
+            logger.error('{} param:{}', err, func.get_extractor_parameters())
+            return None
+        else:
+            return match_result
 
     def _try_find_all(self, func, im_source, im_search, threshold, rgb, max_count):
         try:
@@ -128,12 +130,3 @@ class Match(object):
             return None
         else:
             return func
-
-
-img_source = IMAGE('./test/image/test1.png')
-img_search = IMAGE('./test/image/money.png')
-#
-#
-match = Match()
-ret = match.find_best(im_source=img_source, im_search=img_search)
-logger.info(ret)

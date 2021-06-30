@@ -120,7 +120,6 @@ class KeypointMatch(object):
 
     def extract_good_points(self, im_source, im_search, kp_sch, kp_src, good):
         if len(good) in [0, 1]:
-            # origin_result = self._handle_one_good_points(im_source, im_search, kp_src, kp_sch, good)
             return None
         elif len(good) in [2, 3]:
             if len(good) == 2:
@@ -213,19 +212,6 @@ class KeypointMatch(object):
         # 当y_min大于h_s时，取值h_s-1。  y_max大于h_s-1时，取h_s-1。
         y_min, y_max = int(min(y_min, h_s - 1)), int(min(y_max, h_s - 1))
         return Rect(x=x_min, y=y_min, width=(x_max - x_min), height=(y_max - y_min))
-
-    def _handle_one_good_points(self, im_source, im_search, kp_src, kp_sch, good):
-        """匹配中只有一对匹配的特征点对的情况."""
-        """此方法当前废弃"""
-        raise NotImplementedError
-        # 取出该点在图中的位置
-        # sch_point = Point(int(kp_sch[0].pt[0]), int(kp_sch[0].pt[1]))
-        # src_point = Point(int(kp_src[good[0].trainIdx].pt[0]), int(kp_src[good[0].trainIdx].pt[1]))
-        # # 求出模板原点在匹配图像上的坐标
-        # offset_point = src_point - sch_point
-        # rect = Rect.create_by_point_size(offset_point, Size(im_search.shape[1], im_search.shape[0]))
-        # logger.debug('rect={},sch={}, src={}, offset={}', rect, sch_point, src_point, offset_point)
-        # return rect
 
     def _handle_two_good_points(self, im_source, im_search, kp_src, kp_sch, good):
         """处理两对特征点的情况."""

@@ -31,8 +31,8 @@ def match_time_debug(func):
         # result = (rect, matches, good)
         result = func(self, *args, **kwargs)
         rect, matches, good = result
-        logger.debug('sch_keypoints={}, src_keypoints={}, matches={}, good={}',
-                     len(kp_sch), len(kp_src), len(matches), len(good))
+        # logger.debug('sch_keypoints={}, src_keypoints={}, matches={}, good={}',
+        #              len(kp_sch), len(kp_src), len(matches), len(good))
 
         # im_source, im_search = im_source.clone().imread(), im_search.clone().imread()
         # cv2.namedWindow(str(len(good)), cv2.WINDOW_KEEPRATIO)
