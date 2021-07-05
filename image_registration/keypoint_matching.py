@@ -1,16 +1,16 @@
 #! usr/bin/python
 # -*- coding:utf-8 -*-
-import time
+from typing import Tuple, List, Union
+
 import cv2
 import numpy
 import numpy as np
-from .utils import generate_result, match_time_debug, print_all_result, print_best_result
+from baseImage import IMAGE, Rect
+
 from .exceptions import (NoEnoughPointsError, HomographyError, MatchResultError, PerspectiveTransformError,
                          CreateExtractorError)
 from .match_template import match_template
-from baseImage import IMAGE, Rect, Point, Size
-from loguru import logger
-from typing import Tuple, List, Union
+from .utils import generate_result, match_time_debug, print_all_result, print_best_result
 
 
 class KeypointMatch(object):
