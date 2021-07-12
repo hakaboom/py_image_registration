@@ -1,5 +1,6 @@
 import time
 import re
+from functools import wraps
 from loguru import logger
 from baseImage import IMAGE
 import cv2
@@ -14,14 +15,18 @@ def generate_result(rect, confi):
     return ret
 
 
-def print_run_time(func):
-    def wrapper(self, *args, **kwargs):
-        start_time = time.time()
-        ret = func(self, *args, **kwargs)
-        logger.debug("{}() run time is {time:.2f}ms".format(func.__name__, time=(time.time() - start_time) * 1000))
-        return ret
+class print_run_time(object):
+    def __init__(self):
+        pass
 
-    return wrapper
+    def __call__(self, func):
+        @wraps(func)
+        def wrapped_function(*args, **kwargs):
+            start_time = time.time()
+            ret = func(*args, **kwargs)
+            logger.debug("{}() run time is {time:.2f}ms".format(func.__name__, time=(time.time() - start_time) * 1000))
+            return ret
+        return wrapped_function
 
 
 def match_time_debug(func):
