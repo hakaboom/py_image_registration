@@ -1,5 +1,10 @@
 # py_image_registration
+[![GitHub issues](https://img.shields.io/github/issues/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/issues)
+[![GitHub forks](https://img.shields.io/github/forks/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/network)
+[![GitHub stars](https://img.shields.io/github/stars/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/stargazers)
 [![GitHub license](https://img.shields.io/github/license/hakaboom/py_image_registration?style=plastic)](https://github.com/hakaboom/py_image_registration/blob/master/LICENSE)
+
+
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
 同时包含cuda加速(ORB, SURF, matchTemplate)
