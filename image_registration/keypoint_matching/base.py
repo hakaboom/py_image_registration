@@ -4,10 +4,10 @@ from typing import Union, Tuple, List, Optional
 import cv2
 import numpy as np
 from baseImage import IMAGE, Rect
-from .match_template import match_template
-from .exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError, HomographyError,
-                         MatchResultError)
-from .utils import generate_result
+from image_registration.match_template import match_template
+from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError, HomographyError,
+                                           MatchResultError)
+from image_registration.utils import generate_result
 
 
 class KAZE(object):
@@ -26,7 +26,7 @@ class KAZE(object):
         self.threshold = threshold
         self.rgb = rgb
         self.detector = cv2.KAZE_create()  # type: cv2.KAZE
-
+        self.extractor_parameters = dict()  # TODO:增加相应参数
         try:
             self.matcher = self.create_matcher()
         except AttributeError:
@@ -58,6 +58,44 @@ class KAZE(object):
         confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect, rgb=rgb)
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
+
+    def find_all(self, im_source, im_search, threshold: Union[int, float] = None,
+                 max_count: int = 10,
+                 rgb: bool = None):
+        """
+        通过特征点匹配,在im_source中,找到符合im_search的范围坐标集合
+        :param im_source: 待匹配图像
+        :param im_search: 图片模板
+        :param max_count: 最多可以返回的匹配数量
+        :param threshold: 识别阈值(0~1)
+        :param rgb: 是否使用rgb通道进行校验
+        :return: 如果找到了,则会返回一个Rect对象。没找到则会返回None
+        """
+        threshold = threshold or self.threshold
+        rgb = rgb is None and self.rgb or rgb
+
+        im_source, im_search = self.check_image_input(im_source=im_source, im_search=im_search)
+        result = []
+        # 获取特征点
+        kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search.rgb_2_gray())
+        kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source.rgb_2_gray())
+        # TODO: 保留kp和des,做一份拷贝
+        while len(kp_src) > 2 or len(kp_sch) > 2:
+            rect, matches, good = self.get_rect_from_good_matches(im_source, im_search,
+                                                                  kp_sch, des_sch,
+                                                                  kp_src, des_src)
+            if not rect:
+                break
+
+            confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect, rgb=rgb)
+
+            if confidence > threshold and len(result) < max_count:
+                result.append(generate_result(rect, confidence))
+
+            kp_src, des_src = self.delect_good_descriptors(good, kp_src, des_src)
+            kp_src, des_src = self.delect_rect_descriptors(rect, kp_src, des_src)
+
+        return result
 
     @staticmethod
     def check_image_input(im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
@@ -304,3 +342,39 @@ class KAZE(object):
         # 当y_min大于h_s时，取值h_s-1。  y_max大于h_s-1时，取h_s-1。
         y_min, y_max = int(min(y_min, h_s - 1)), int(min(y_max, h_s - 1))
         return Rect(x=x_min, y=y_min, width=(x_max - x_min), height=(y_max - y_min))
+
+    @staticmethod
+    def delect_rect_descriptors(rect, kp, des):
+        """
+        删除rect范围内的特征点与描述符
+        """
+        # TODO:增加类型提示
+        tl, br = rect.tl, rect.br
+        kp = kp.copy()
+        des = des.copy()
+
+        delect_list = tuple(kp.index(i) for i in kp if tl.x <= i.pt[0] <= br.x and tl.y <= i.pt[1] <= br.y)
+        for i in sorted(delect_list, reverse=True):
+            kp.pop(i)
+
+        des = np.delete(des, delect_list, axis=0)
+        return kp, des
+
+    @staticmethod
+    def delect_good_descriptors(good, kp, des):
+        """
+        将匹配的特征点与描述符删除
+        """
+        # TODO:增加类型提示
+        kp = kp.copy()
+        des = des.copy()
+
+        delect_list = [i.trainIdx for i in good]
+        for i in sorted(delect_list, reverse=True):
+            kp.pop(i)
+
+        des = np.delete(des, delect_list, axis=0)
+        return kp, des
+
+    def get_extractor_parameters(self):
+        return self.extractor_parameters

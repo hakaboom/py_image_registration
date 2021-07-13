@@ -1,6 +1,6 @@
 import cv2
-
-from .keypoint_contrib import RootSIFT, ORB, CUDA_ORB
+# TODO: 修改接口函数
+from .keypoint_matching import RootSIFT, ORB, CUDA_ORB
 from .keypoint_matching import match_template
 
 CVSTRATEGY = [match_template, ORB, RootSIFT]
