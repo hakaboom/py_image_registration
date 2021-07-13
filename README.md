@@ -1,5 +1,5 @@
 # py_image_registration
-
+[![GitHub license](https://img.shields.io/github/license/hakaboom/py_image_registration?style=plastic)](https://github.com/hakaboom/py_image_registration/blob/master/LICENSE)
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
 同时包含cuda加速(ORB, SURF, matchTemplate)
