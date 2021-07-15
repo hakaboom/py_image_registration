@@ -1,11 +1,11 @@
 import cv2
 # TODO: 修改接口函数
-from .keypoint_matching import RootSIFT, ORB, CUDA_ORB
-from .keypoint_matching import match_template
+from image_registration import (ORB, RootSIFT, SIFT, SURF, KAZE, BRIEF, MatchTemplate,
+                                CUDA_SURF, CUDA_ORB, CudaMatchTemplate)
 
-CVSTRATEGY = [match_template, ORB, RootSIFT]
+CVSTRATEGY = [MatchTemplate, ORB, RootSIFT]
 if cv2.cuda.getCudaEnabledDeviceCount() > 0:
-    CVSTRATEGY = [match_template, CUDA_ORB, RootSIFT]
+    CVSTRATEGY = [CudaMatchTemplate, CUDA_ORB, RootSIFT]
 
 CVPARAMS = {
     'ORB': [

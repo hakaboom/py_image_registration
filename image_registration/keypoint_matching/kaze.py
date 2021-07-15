@@ -61,9 +61,9 @@ class KAZE(object):
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
 
-    def find_all(self, im_source, im_search, threshold: Union[int, float] = None,
-                 max_count: int = 10,
-                 rgb: bool = None):
+    def find_all_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                        im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                        threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = None):
         """
         通过特征点匹配,在im_source中,找到符合im_search的范围坐标集合
         :param im_source: 待匹配图像

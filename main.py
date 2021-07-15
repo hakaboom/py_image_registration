@@ -4,10 +4,9 @@ twine upload dist/*
 """
 
 from baseImage import IMAGE
-from image_registration import RootSIFT as matcher
+from image_registration.findit import Findit
 
-
-match = matcher()
+match = Findit()
 # orb = ORB()
 
 im_source = IMAGE()
