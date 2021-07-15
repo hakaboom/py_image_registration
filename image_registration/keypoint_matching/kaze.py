@@ -346,11 +346,10 @@ class KAZE(object):
         return Rect(x=x_min, y=y_min, width=(x_max - x_min), height=(y_max - y_min))
 
     @staticmethod
-    def delect_rect_descriptors(rect, kp, des):
+    def delect_rect_descriptors(rect: Rect, kp: List[cv2.KeyPoint], des: np.ndarray):
         """
         删除rect范围内的特征点与描述符
         """
-        # TODO:增加类型提示
         tl, br = rect.tl, rect.br
         kp = kp.copy()
         des = des.copy()
@@ -363,11 +362,10 @@ class KAZE(object):
         return kp, des
 
     @staticmethod
-    def delect_good_descriptors(good, kp, des):
+    def delect_good_descriptors(good: List[cv2.DMatch], kp: List[cv2.KeyPoint], des: np.ndarray):
         """
         将匹配的特征点与描述符删除
         """
-        # TODO:增加类型提示
         kp = kp.copy()
         des = des.copy()
 

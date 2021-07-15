@@ -1,5 +1,4 @@
 import cv2
-# TODO: 修改接口函数
 from image_registration import (ORB, RootSIFT, SIFT, SURF, KAZE, BRIEF, MatchTemplate,
                                 CUDA_SURF, CUDA_ORB, CudaMatchTemplate)
 
