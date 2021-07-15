@@ -2,28 +2,36 @@
 # -*- coding:utf-8 -*-
 """ opencv matchTemplate"""
 import cv2
-import time
-from .utils import generate_result, print_run_time, print_best_result, print_all_result
+import numpy as np
+
+from image_registration.exceptions import (MatchResultError)
+from image_registration.utils import generate_result
 from baseImage import IMAGE, Rect
-from loguru import logger
-from typing import Union
+from typing import Union, Tuple
 
 
-class _match_template(object):
+class MatchTemplate(object):
     METHOD_NAME = "tpl"
 
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True):
+        """
+        初始化
+        :param threshold: 识别阈值(0~1)
+        :param rgb: 是否使用rgb通道进行校验
+        :return: None
+        """
         self.threshold = threshold
         self.rgb = rgb
 
-    @print_best_result
-    def find_best(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = True):
+    def find_best_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         threshold: Union[int, float] = None, rgb: bool = True):
         """
         模板匹配
         :param im_source: 待匹配图像
-        :param im_search: 待匹配模板
-        :param threshold: 匹配度 0~1
-        :param rgb: 是否判断rgb颜色
+        :param im_search: 图片模板
+        :param threshold: 识别阈值(0~1)
+        :param rgb: 是否使用rgb通道进行校验
         :return: None or Rect
         """
         im_source, im_search = self.check_detection_input(im_source, im_search)
@@ -32,8 +40,8 @@ class _match_template(object):
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
         h, w = im_search.size
         # 求可信度
-        img_crop = im_source.crop_image(Rect(max_loc[0], max_loc[1], w, h))
-        confidence = self._get_confidence_from_matrix(img_crop, im_search, max_val=max_val, rgb=rgb)
+        crop_rect = Rect(max_loc[0], max_loc[1], w, h)
+        confidence = self.cal_confidence(im_source, im_search, crop_rect, max_val, rgb)
         # 如果可信度小于threshold,则返回None
 
         if confidence < (threshold or self.threshold):
@@ -42,17 +50,16 @@ class _match_template(object):
         rect = Rect(x=x, y=y, width=w, height=h)
         return generate_result(rect, confidence)
 
-    @print_all_result
-    def find_all(self, im_source, im_search, threshold: Union[int, float] = None,
-                 max_count: int = 10,
-                 rgb: bool = True):
+    def find_all_results(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = True):
         """
         模板匹配
         :param im_source: 待匹配图像
-        :param im_search: 待匹配模板
-        :param threshold: 匹配度
+        :param im_search: 图片模板
+        :param threshold: 识别阈值(0~1)
         :param max_count: 最多匹配数量
-        :param rgb: 是否判断rgb颜色
+        :param rgb: 是否使用rgb通道进行校验
         :return: None or Rect
         """
         im_source, im_search = self.check_detection_input(im_source, im_search)
@@ -74,13 +81,20 @@ class _match_template(object):
         return result if result else None
 
     @staticmethod
-    def _get_template_result_matrix(im_source, im_search):
+    def _get_template_result_matrix(im_source: IMAGE, im_search: IMAGE) -> np.ndarray:
         """求取模板匹配的结果矩阵."""
         s_gray, i_gray = im_search.rgb_2_gray(), im_source.rgb_2_gray()
         return cv2.matchTemplate(i_gray, s_gray, cv2.TM_CCOEFF_NORMED)
 
     @staticmethod
-    def check_detection_input(im_source, im_search):
+    def check_detection_input(im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                              im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[IMAGE, IMAGE]:
+        """
+        检测输入的图像数据是否正确
+        :param im_source: 待匹配图像
+        :param im_search: 图片模板
+        :return: im_source, im_search
+        """
         if not isinstance(im_source, IMAGE):
             im_source = IMAGE(im_source)
         if not isinstance(im_search, IMAGE):
@@ -91,7 +105,13 @@ class _match_template(object):
         return im_source, im_search
 
     @staticmethod
-    def cal_rgb_confidence(im_source, im_search):
+    def cal_rgb_confidence(im_source: IMAGE, im_search: IMAGE):
+        """
+        计算两张图片图片rgb三通道的置信度
+        :param im_source: 待匹配图像
+        :param im_search: 图片模板
+        :return: 最小置信度
+        """
         img_src_rgb, img_sch_rgb = im_source.imread(), im_search.imread()
         img_sch_rgb = cv2.copyMakeBorder(img_sch_rgb, 10, 10, 10, 10, cv2.BORDER_REPLICATE)
         # 转HSV强化颜色的影响
@@ -107,7 +127,10 @@ class _match_template(object):
         return min(bgr_confidence)
 
     @staticmethod
-    def cal_ccoeff_confidence(im_source, im_search):
+    def cal_ccoeff_confidence(im_source: IMAGE, im_search: IMAGE):
+        """
+        使用CCOEFF方法模板匹配图像
+        """
         img_src_gray, img_sch_gray = im_source.rgb_2_gray(), im_search.rgb_2_gray()
         # 扩展置信度计算区域
         img_sch_gray = cv2.copyMakeBorder(img_sch_gray, 10, 10, 10, 10, cv2.BORDER_REPLICATE)
@@ -117,75 +140,32 @@ class _match_template(object):
 
         return max_val
 
+    def cal_confidence(self, im_source: IMAGE, im_search: IMAGE, crop_rect: Rect, max_val, rgb) -> Union[int, float]:
+        """
+        将截图和识别结果缩放到大小一致,并计算可信度
+        :param im_source: 待匹配图像
+        :param im_search: 图片模板
+        :param crop_rect: 需要在im_source截取的区域
+        :param rgb: 是否使用rgb通道进行校验
+        :param max_val: matchTemplate得到的最大值
+        :raise MatchResultError: crop_rect范围超出了im_source边界
+        :return: 返回可信度(0~1)
+        """
+        try:
+            target_img = im_source.crop_image(crop_rect)
+        except OverflowError:
+            raise MatchResultError(f"Target area({crop_rect}) out of screen{im_source.size}")
+
+        confidence = self._get_confidence_from_matrix(target_img, im_search, max_val, rgb)
+        return confidence
+
     @staticmethod
     def _get_confidence_from_matrix(img_crop, im_search, max_val, rgb):
         """根据结果矩阵求出confidence."""
         # 求取可信度:
         if rgb:
             # 如果有颜色校验,对目标区域进行BGR三通道校验:
-            confidence = _match_template.cal_rgb_confidence(img_crop, im_search)
+            confidence = MatchTemplate.cal_rgb_confidence(img_crop, im_search)
         else:
             confidence = max_val
         return confidence
-
-    @staticmethod
-    def get_extractor_parameters():
-        return 'template'
-
-
-class _cuda_match_template(_match_template):
-    METHOD_NAME = "cuda_tpl"
-
-    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True, *args, **kwargs):
-        super(_cuda_match_template, self).__init__(threshold, rgb, *args, **kwargs)
-        self.matcher = cv2.cuda.createTemplateMatching(cv2.CV_8U, cv2.TM_CCOEFF_NORMED)
-
-    @staticmethod
-    def check_detection_input(im_source, im_search):
-        if not isinstance(im_source, IMAGE):
-            im_source = IMAGE(im_source)
-        if not isinstance(im_search, IMAGE):
-            im_search = IMAGE(im_search)
-
-        im_source.transform_gpu()
-        im_search.transform_gpu()
-        return im_source, im_search
-
-    def _get_template_result_matrix(self, im_source, im_search):
-        """求取模板匹配的结果矩阵."""
-        s_gray, i_gray = im_search.rgb_2_gray(), im_source.rgb_2_gray()
-        res = self.matcher.match(i_gray, s_gray)
-        return res.download()
-
-    def cuda_cal_rgb_confidence(self, img_src_rgb, img_sch_rgb):
-        img_src_rgb, img_sch_rgb = img_src_rgb.download(), img_sch_rgb.download()
-        img_sch_rgb = cv2.cuda.copyMakeBorder(img_sch_rgb, 10, 10, 10, 10, cv2.BORDER_REPLICATE)
-        # 转HSV强化颜色的影响
-        img_src_rgb = cv2.cuda.cvtColor(img_src_rgb, cv2.COLOR_BGR2HSV)
-        img_sch_rgb = cv2.cuda.cvtColor(img_sch_rgb, cv2.COLOR_BGR2HSV)
-        src_bgr, sch_bgr = cv2.cuda.split(img_src_rgb), cv2.cuda.split(img_sch_rgb)
-        # 计算BGR三通道的confidence，存入bgr_confidence:
-        bgr_confidence = [0, 0, 0]
-        for i in range(3):
-            res_temp = self.matcher.match(sch_bgr[i], src_bgr[i]).download()
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_temp)
-            bgr_confidence[i] = max_val
-        return min(bgr_confidence)
-
-    def _get_confidence_from_matrix(self, img_crop, im_search, max_val, rgb):
-        """根据结果矩阵求出confidence."""
-        # 求取可信度:
-        if rgb:
-            # 如果有颜色校验,对目标区域进行BGR三通道校验:
-            confidence = self.cuda_cal_rgb_confidence(img_crop, im_search)
-        else:
-            confidence = max_val
-        return confidence
-
-
-if cv2.cuda.getCudaEnabledDeviceCount() > 0:
-    class match_template(_cuda_match_template):
-        pass
-else:
-    class match_template(_match_template):
-        pass

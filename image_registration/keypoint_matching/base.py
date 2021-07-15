@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from typing import Union, Tuple, List, Optional
+from typing import Union, Tuple, List
 import cv2
 import numpy as np
 from baseImage import IMAGE, Rect
-from image_registration.match_template import match_template
+from image_registration.template_matching.matchTemplate import match_template
 from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError, HomographyError,
                                            MatchResultError)
 from image_registration.utils import generate_result
@@ -32,7 +32,9 @@ class KAZE(object):
         except AttributeError:
             raise CreateExtractorError('create KAZE matcher error')
 
-    def find_best_result(self, im_source, im_search, threshold: Union[int, float] = None, rgb: bool = None):
+    def find_best_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         threshold: Union[int, float] = None, rgb: bool = None):
         """
         通过特征点匹配,在im_source中,找到最符合im_search的范围坐标
         :param im_source: 待匹配图像
@@ -55,7 +57,7 @@ class KAZE(object):
         if not rect:
             return None
         # 根据识别的结果,从待匹配图像中截取范围,进行模板匹配求出相似度
-        confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect, rgb=rgb)
+        confidence = self._cal_confidence(im_source=im_source, im_search=im_search, crop_rect=rect, rgb=rgb)
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
 
@@ -87,7 +89,7 @@ class KAZE(object):
             if not rect:
                 break
 
-            confidence = self._cal_confidence(im_source=im_source, im_search=im_search, rect=rect, rgb=rgb)
+            confidence = self._cal_confidence(im_source=im_source, im_search=im_search, crop_rect=rect, rgb=rgb)
 
             if confidence > threshold and len(result) < max_count:
                 result.append(generate_result(rect, confidence))
@@ -149,20 +151,20 @@ class KAZE(object):
         rect = self.extract_good_points(im_source, im_search, kp_sch, kp_src, good)
         return rect, matches, good
 
-    def _cal_confidence(self, im_source, im_search, rect: Rect, rgb: bool) -> Union[int, float]:
+    def _cal_confidence(self, im_source, im_search, crop_rect: Rect, rgb: bool) -> Union[int, float]:
         """
         将截图和识别结果缩放到大小一致,并计算可信度
         :param im_source: 待匹配图像
         :param im_search: 图片模板
-        :param rect: 需要在im_source截取的区域
+        :param crop_rect: 需要在im_source截取的区域
         :param rgb: 是否使用rgb通道进行校验
         :raise MatchResultError: rect范围超出了im_source边界
         :return: 返回可信度(0~1)
         """
         try:
-            target_img = im_source.crop_image(rect)
+            target_img = im_source.crop_image(crop_rect)
         except OverflowError:
-            raise MatchResultError("Target area({}) out of screen{}".format(rect, im_source.size))
+            raise MatchResultError(f"Target area({crop_rect}) out of screen{im_source.size}")
 
         h, w = im_search.size
         target_img.resize(w, h)
