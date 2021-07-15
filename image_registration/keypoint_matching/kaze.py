@@ -4,7 +4,7 @@ from typing import Union, Tuple, List
 import cv2
 import numpy as np
 from baseImage import IMAGE, Rect
-from image_registration.template_matching.matchTemplate import match_template
+from image_registration.template_matching.matchTemplate import MatchTemplate
 from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError, HomographyError,
                                            MatchResultError)
 from image_registration.utils import generate_result
@@ -14,7 +14,7 @@ class KAZE(object):
     FLANN_INDEX_KDTREE = 0
     FILTER_RATIO = 0.59
     METHOD_NAME = 'KAZE'
-    template = match_template()
+    template = MatchTemplate()
 
     def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True):
         """

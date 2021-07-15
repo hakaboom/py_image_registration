@@ -1,0 +1,20 @@
+# keyPoint Matching
+from .keypoint_matching.kaze import KAZE
+from .keypoint_matching.orb import ORB
+from .keypoint_matching.sift import SIFT, RootSIFT
+from .keypoint_matching.surf import SURF
+from .keypoint_matching.brief import BRIEF
+
+# CUDA keyPoint Matching
+import cv2
+if cv2.cuda.getCudaEnabledDeviceCount() > 0:
+    from .keypoint_matching.cuda.surf import CUDA_SURF
+    from .keypoint_matching.cuda.orb import CUDA_ORB
+
+
+# Template Matching
+from .template_matching.matchTemplate import MatchTemplate
+
+# CUDA Template Matching
+if cv2.cuda.getCudaEnabledDeviceCount() > 0:
+    from .template_matching.cuda.matchTemplate import CudaMatchTemplate

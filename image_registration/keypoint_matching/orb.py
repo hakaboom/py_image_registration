@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 from typing import Tuple, List, Union
-from image_registration.keypoint_matching.base import KAZE
+from image_registration.keypoint_matching.kaze import KAZE
 from image_registration.exceptions import (CreateExtractorError, NoModuleError, NoEnoughPointsError)
 
 
