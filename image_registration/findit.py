@@ -10,7 +10,13 @@ from .settings import CVSTRATEGY, CVPARAMS
 
 
 class Findit(object):
-    def __init__(self, threshold=None, rgb=False):
+    def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True):
+        """
+        初始化
+        :param threshold: 识别阈值(0~1)
+        :param rgb: 是否使用rgb通道进行校验
+        :return: None
+        """
         self.threshold = threshold
         self.rgb = rgb
         self.match_methods = self.init_matching_methods()
