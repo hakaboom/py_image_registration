@@ -1,4 +1,4 @@
-# py_image_registration 
+# py_image_registration
 
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
@@ -30,7 +30,6 @@ sift = SIFT()
 2. **MatchTemplate**
 
 模板匹配
-
 ```Python
 from image_registration import match_template
 from baseImage import IMAGE, Rect
@@ -39,7 +38,7 @@ im_source = IMAGE('test.png')
 im_search = IMAGE('star.png')
 
 tpl = match_template()
-result = tpl.find_best_result(im_source=im_source, im_search=im_search)
+result = tpl.find_all_results(im_source=im_source, im_search=im_search)
 # expect output
 # {
 #  'rect': Rect,  # 返回一个baseImage.Rect类的识别范围
@@ -85,7 +84,7 @@ im_source = IMAGE('test.png')
 im_search = IMAGE('star.png')
 
 orb.find_best(im_source=im_source, im_search=im_search)
-orb.find_all_result(im_source=im_source, im_search=im_search)
+orb.find_all(im_source=im_source, im_search=im_search)
 # 返回结果MatchTemplate
 ```
 
