@@ -2,10 +2,8 @@ import cv2
 from image_registration import (ORB, RootSIFT, SIFT, SURF, KAZE, BRIEF, MatchTemplate,
                                 CUDA_SURF, CUDA_ORB, CudaMatchTemplate)
 
-CVSTRATEGY = [MatchTemplate, ORB, RootSIFT]
-
 if cv2.cuda.getCudaEnabledDeviceCount() > 0:
-    CVSTRATEGY = [CUDA_ORB]
+    CVSTRATEGY = [CudaMatchTemplate, CUDA_ORB, RootSIFT]
 
 CVPARAMS = {
     'CUDA_ORB': [
