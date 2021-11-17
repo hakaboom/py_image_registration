@@ -1,4 +1,9 @@
-# py_image_registration 
+# py_image_registration
+[![GitHub issues](https://img.shields.io/github/issues/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/issues)
+[![GitHub forks](https://img.shields.io/github/forks/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/network)
+[![GitHub stars](https://img.shields.io/github/stars/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/stargazers)
+[![GitHub license](https://img.shields.io/github/license/hakaboom/py_image_registration?style=plastic)](https://github.com/hakaboom/py_image_registration/blob/master/LICENSE)
+
 
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
@@ -30,7 +35,6 @@ sift = SIFT()
 2. **MatchTemplate**
 
 模板匹配
-
 ```Python
 from image_registration import match_template
 from baseImage import IMAGE, Rect
@@ -39,7 +43,7 @@ im_source = IMAGE('test.png')
 im_search = IMAGE('star.png')
 
 tpl = match_template()
-result = tpl.find_best_result(im_source=im_source, im_search=im_search)
+result = tpl.find_best(im_source=im_source, im_search=im_search)
 # expect output
 # {
 #  'rect': Rect,  # 返回一个baseImage.Rect类的识别范围
@@ -51,7 +55,7 @@ result = tpl.find_best_result(im_source=im_source, im_search=im_search)
 # rgb: 是否判断rgb颜色
 
 
-tpl.find_all_results(im_source=im_source, im_search=im_search)
+tpl.find_all(im_source=im_source, im_search=im_search)
 # expect output
 # {
 #  {
@@ -85,7 +89,7 @@ im_source = IMAGE('test.png')
 im_search = IMAGE('star.png')
 
 orb.find_best(im_source=im_source, im_search=im_search)
-orb.find_all_result(im_source=im_source, im_search=im_search)
+orb.find_all(im_source=im_source, im_search=im_search)
 # 返回结果MatchTemplate
 ```
 
