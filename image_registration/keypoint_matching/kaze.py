@@ -209,7 +209,7 @@ class KAZE(object):
             return None
         elif len(good) in [2, 3]:
             if len(good) == 2:
-                origin_result = self._handle_two_good_points(im_source, im_search, kp_src, kp_sch, good)
+                origin_result = self._handle_two_good_points(im_source, im_search, kp_sch, kp_src, good)
             else:
                 origin_result = self._handle_three_good_points(im_source, im_search, kp_sch, kp_src, good)
 
