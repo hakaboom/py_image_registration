@@ -1,4 +1,9 @@
 # py_image_registration
+[![GitHub issues](https://img.shields.io/github/issues/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/issues)
+[![GitHub forks](https://img.shields.io/github/forks/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/network)
+[![GitHub stars](https://img.shields.io/github/stars/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/stargazers)
+[![GitHub license](https://img.shields.io/github/license/hakaboom/py_image_registration?style=plastic)](https://github.com/hakaboom/py_image_registration/blob/master/LICENSE)
+
 
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
@@ -10,7 +15,7 @@ Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTempl
 - opencv需要自己安装或自行编译,读取的到cv2模块就行
 
 ## Installation
-pip3 install -U py_image_registration
+pip3 install py-image-registration
 
 ## Example
 
@@ -32,13 +37,13 @@ sift = SIFT()
 模板匹配
 ```Python
 from image_registration import match_template
-from baseImage import Image, Rect
+from baseImage import IMAGE, Rect
 
-im_source = Image('test.png')
-im_search = Image('star.png')
+im_source = IMAGE('test.png')
+im_search = IMAGE('star.png')
 
 tpl = match_template()
-result = tpl.find_all_results(im_source=im_source, im_search=im_search)
+result = tpl.find_best(im_source=im_source, im_search=im_search)
 # expect output
 # {
 #  'rect': Rect,  # 返回一个baseImage.Rect类的识别范围
@@ -50,7 +55,7 @@ result = tpl.find_all_results(im_source=im_source, im_search=im_search)
 # rgb: 是否判断rgb颜色
 
 
-tpl.find_all_results(im_source=im_source, im_search=im_search)
+tpl.find_all(im_source=im_source, im_search=im_search)
 # expect output
 # {
 #  {
@@ -80,8 +85,8 @@ from image_registration import ORB, SIFT, RootSIFT, SURF, BRIEF, AKAZE, CUDA_SUR
 orb = ORB()
 sift = SIFT()
 
-im_source = Image('test.png')
-im_search = Image('star.png')
+im_source = IMAGE('test.png')
+im_search = IMAGE('star.png')
 
 orb.find_best(im_source=im_source, im_search=im_search)
 orb.find_all(im_source=im_source, im_search=im_search)
