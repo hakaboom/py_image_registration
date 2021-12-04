@@ -4,7 +4,7 @@ from loguru import logger
 import numpy as np
 import cv2
 
-from baseImage import IMAGE
+from baseImage import Image
 from .exceptions import BaseError, CreateExtractorError
 from .settings import CVSTRATEGY, CVPARAMS
 from .utils import print_run_time
@@ -23,8 +23,8 @@ class Findit(object):
         self.match_methods = self.init_matching_methods()
 
     @print_run_time()
-    def find_best_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+    def find_best_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, rgb: bool = None):
         """
         使用CVSTRATEGY中的方法,依次运行。在im_source中,找到最符合im_search的范围坐标
@@ -53,8 +53,8 @@ class Findit(object):
 
         return None
 
-    def find_all_results(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+    def find_all_results(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = None):
         """
         通过特征点匹配,在im_source中,找到符合im_search的范围坐标集合

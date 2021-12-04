@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 from typing import Union, Tuple
-from baseImage import IMAGE
+from baseImage import Image
 
 from image_registration.template_matching.matchTemplate import MatchTemplate
 from image_registration.exceptions import NoModuleError
@@ -25,18 +25,18 @@ class CudaMatchTemplate(MatchTemplate):
             raise NoModuleError('create CUDA TemplateMatching Error')
 
     @staticmethod
-    def check_detection_input(im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                              im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[IMAGE, IMAGE]:
-        if not isinstance(im_source, IMAGE):
-            im_source = IMAGE(im_source)
-        if not isinstance(im_search, IMAGE):
-            im_search = IMAGE(im_search)
+    def check_detection_input(im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                              im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[Image, Image]:
+        if not isinstance(im_source, Image):
+            im_source = Image(im_source)
+        if not isinstance(im_search, Image):
+            im_search = Image(im_search)
 
         im_source.transform_gpu()
         im_search.transform_gpu()
         return im_source, im_search
 
-    def _get_template_result_matrix(self, im_source: IMAGE, im_search: IMAGE):
+    def _get_template_result_matrix(self, im_source: Image, im_search: Image):
         """求取模板匹配的结果矩阵."""
         s_gray, i_gray = im_search.rgb_2_gray(), im_source.rgb_2_gray()
         res = self.matcher.match(i_gray, s_gray)

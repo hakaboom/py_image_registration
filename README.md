@@ -32,10 +32,10 @@ sift = SIFT()
 模板匹配
 ```Python
 from image_registration import match_template
-from baseImage import IMAGE, Rect
+from baseImage import Image, Rect
 
-im_source = IMAGE('test.png')
-im_search = IMAGE('star.png')
+im_source = Image('test.png')
+im_search = Image('star.png')
 
 tpl = match_template()
 result = tpl.find_all_results(im_source=im_source, im_search=im_search)
@@ -80,8 +80,8 @@ from image_registration import ORB, SIFT, RootSIFT, SURF, BRIEF, AKAZE, CUDA_SUR
 orb = ORB()
 sift = SIFT()
 
-im_source = IMAGE('test.png')
-im_search = IMAGE('star.png')
+im_source = Image('test.png')
+im_search = Image('star.png')
 
 orb.find_best(im_source=im_source, im_search=im_search)
 orb.find_all(im_source=im_source, im_search=im_search)

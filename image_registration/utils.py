@@ -2,7 +2,7 @@ import time
 import re
 from functools import wraps
 from loguru import logger
-from baseImage import IMAGE
+from baseImage import Image
 import cv2
 
 

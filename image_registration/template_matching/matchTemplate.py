@@ -6,7 +6,7 @@ import numpy as np
 
 from image_registration.exceptions import (MatchResultError)
 from image_registration.utils import generate_result
-from baseImage import IMAGE, Rect
+from baseImage import Image, Rect
 from typing import Union, Tuple
 
 
@@ -23,8 +23,8 @@ class MatchTemplate(object):
         self.threshold = threshold
         self.rgb = rgb
 
-    def find_best_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+    def find_best_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, rgb: bool = True):
         """
         模板匹配
@@ -50,8 +50,8 @@ class MatchTemplate(object):
         rect = Rect(x=x, y=y, width=w, height=h)
         return generate_result(rect, confidence)
 
-    def find_all_results(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+    def find_all_results(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = True):
         """
         模板匹配
@@ -81,31 +81,31 @@ class MatchTemplate(object):
         return result if result else None
 
     @staticmethod
-    def _get_template_result_matrix(im_source: IMAGE, im_search: IMAGE) -> np.ndarray:
+    def _get_template_result_matrix(im_source: Image, im_search: Image) -> np.ndarray:
         """求取模板匹配的结果矩阵."""
         s_gray, i_gray = im_search.rgb_2_gray(), im_source.rgb_2_gray()
         return cv2.matchTemplate(i_gray, s_gray, cv2.TM_CCOEFF_NORMED)
 
     @staticmethod
-    def check_detection_input(im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                              im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[IMAGE, IMAGE]:
+    def check_detection_input(im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                              im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[Image, Image]:
         """
         检测输入的图像数据是否正确
         :param im_source: 待匹配图像
         :param im_search: 图片模板
         :return: im_source, im_search
         """
-        if not isinstance(im_source, IMAGE):
-            im_source = IMAGE(im_source)
-        if not isinstance(im_search, IMAGE):
-            im_search = IMAGE(im_search)
+        if not isinstance(im_source, Image):
+            im_source = Image(im_source)
+        if not isinstance(im_search, Image):
+            im_search = Image(im_search)
 
         im_source.transform_cpu()
         im_search.transform_cpu()
         return im_source, im_search
 
     @staticmethod
-    def cal_rgb_confidence(im_source: IMAGE, im_search: IMAGE):
+    def cal_rgb_confidence(im_source: Image, im_search: Image):
         """
         计算两张图片图片rgb三通道的置信度
         :param im_source: 待匹配图像
@@ -127,7 +127,7 @@ class MatchTemplate(object):
         return min(bgr_confidence)
 
     @staticmethod
-    def cal_ccoeff_confidence(im_source: IMAGE, im_search: IMAGE):
+    def cal_ccoeff_confidence(im_source: Image, im_search: Image):
         """
         使用CCOEFF方法模板匹配图像
         """
@@ -140,7 +140,7 @@ class MatchTemplate(object):
 
         return max_val
 
-    def cal_confidence(self, im_source: IMAGE, im_search: IMAGE, crop_rect: Rect, max_val, rgb) -> Union[int, float]:
+    def cal_confidence(self, im_source: Image, im_search: Image, crop_rect: Rect, max_val, rgb) -> Union[int, float]:
         """
         将截图和识别结果缩放到大小一致,并计算可信度
         :param im_source: 待匹配图像

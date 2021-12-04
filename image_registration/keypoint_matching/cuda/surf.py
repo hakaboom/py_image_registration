@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import cv2
 import numpy as np
-from baseImage import IMAGE
+from baseImage import Image
 from image_registration.keypoint_matching.kaze import KAZE
 from typing import Tuple, List, Union
 from image_registration.exceptions import (CreateExtractorError, NoEnoughPointsError,
@@ -37,18 +37,18 @@ class CUDA_SURF(KAZE):
         matcher = cv2.cuda_DescriptorMatcher.createBFMatcher(cv2.NORM_L2)
         return matcher
 
-    def check_image_input(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                          im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[IMAGE, IMAGE]:
+    def check_image_input(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                          im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[Image, Image]:
         """
         检测输入的图像数据是否正确,并且转换为Gpu模式
         :param im_source: 待匹配图像
         :param im_search: 图片模板
         :return im_source, im_search
         """
-        if not isinstance(im_source, IMAGE):
-            im_source = IMAGE(im_source)
-        if not isinstance(im_search, IMAGE):
-            im_search = IMAGE(im_search)
+        if not isinstance(im_source, Image):
+            im_source = Image(im_source)
+        if not isinstance(im_search, Image):
+            im_search = Image(im_search)
 
         self._check_image_size(im_source)
         self._check_image_size(im_search)
@@ -58,7 +58,7 @@ class CUDA_SURF(KAZE):
 
         return im_source, im_search
 
-    def _check_image_size(self, image: IMAGE):
+    def _check_image_size(self, image: Image):
         """
             SURF匹配特征点时,无法处理长宽太小的图片
             https://stackoverflow.com/questions/42492060/surf-cuda-error-while-computing-descriptors-and-keypoints
@@ -83,7 +83,7 @@ class CUDA_SURF(KAZE):
             raise CudaSurfInputImageError('The image size({width}x{height}) does not conform to SURF_CUDA standard'.
                                           format(width=image.size[1], height=image.size[0]))
 
-    def get_rect_from_good_matches(self, im_source: IMAGE, im_search: IMAGE,
+    def get_rect_from_good_matches(self, im_source: Image, im_search: Image,
                                    kp_sch, des_sch: cv2.cuda_GpuMat,
                                    kp_src, des_src: cv2.cuda_GpuMat):
         # TODO: 增加kp_sch,des_sch的类型提示,以及范函数返回值的类型提示

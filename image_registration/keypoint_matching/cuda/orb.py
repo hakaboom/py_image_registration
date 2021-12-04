@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 from typing import Union, Tuple, List
-from baseImage import IMAGE
+from baseImage import Image
 from image_registration.keypoint_matching.kaze import KAZE
 from image_registration.exceptions import (CreateExtractorError, CudaOrbDetectorError,
                                            NoEnoughPointsError)
@@ -30,18 +30,18 @@ class CUDA_ORB(KAZE):
         except Exception:
             raise CreateExtractorError('create cuda_orb extractor error')
 
-    def check_image_input(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                          im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[IMAGE, IMAGE]:
+    def check_image_input(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                          im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[Image, Image]:
         """
         检测输入的图像数据是否正确,并且转换为Gpu模式
         :param im_source: 待匹配图像
         :param im_search: 图片模板
         :return im_source, im_search
         """
-        if not isinstance(im_source, IMAGE):
-            im_source = IMAGE(im_source)
-        if not isinstance(im_search, IMAGE):
-            im_search = IMAGE(im_search)
+        if not isinstance(im_source, Image):
+            im_source = Image(im_source)
+        if not isinstance(im_search, Image):
+            im_search = Image(im_search)
 
         im_source.transform_gpu()
         im_search.transform_gpu()

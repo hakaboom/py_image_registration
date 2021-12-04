@@ -3,7 +3,7 @@
 from typing import Union, Tuple, List
 import cv2
 import numpy as np
-from baseImage import IMAGE, Rect
+from baseImage import Image, Rect
 from image_registration.template_matching.matchTemplate import MatchTemplate
 from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError, HomographyError,
                                            MatchResultError)
@@ -32,8 +32,8 @@ class KAZE(object):
         except AttributeError:
             raise CreateExtractorError('create KAZE matcher error')
 
-    def find_best_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                         im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+    def find_best_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, rgb: bool = None):
         """
         通过特征点匹配,在im_source中,找到最符合im_search的范围坐标
@@ -61,8 +61,8 @@ class KAZE(object):
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
 
-    def find_all_result(self, im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                        im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+    def find_all_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                        im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                         threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = None):
         """
         通过特征点匹配,在im_source中,找到符合im_search的范围坐标集合
@@ -100,18 +100,18 @@ class KAZE(object):
         return result
 
     @staticmethod
-    def check_image_input(im_source: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                          im_search: Union[IMAGE, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[IMAGE, IMAGE]:
+    def check_image_input(im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                          im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes]) -> Tuple[Image, Image]:
         """
         检测输入的图像数据是否正确
         :param im_source: 待匹配图像
         :param im_search: 图片模板
         :return im_source, im_search
         """
-        if not isinstance(im_source, IMAGE):
-            im_source = IMAGE(im_source)
-        if not isinstance(im_search, IMAGE):
-            im_search = IMAGE(im_search)
+        if not isinstance(im_source, Image):
+            im_source = Image(im_source)
+        if not isinstance(im_search, Image):
+            im_search = Image(im_search)
 
         im_source.transform_cpu()
         im_search.transform_cpu()
@@ -141,7 +141,7 @@ class KAZE(object):
             raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
 
-    def get_rect_from_good_matches(self, im_source: IMAGE, im_search: IMAGE,
+    def get_rect_from_good_matches(self, im_source: Image, im_search: Image,
                                    kp_sch: List[cv2.KeyPoint], des_sch: np.ndarray,
                                    kp_src: List[cv2.KeyPoint], des_src: np.ndarray) \
             -> Tuple[Rect, List[List[cv2.DMatch]], List[cv2.DMatch]]:
@@ -199,7 +199,7 @@ class KAZE(object):
                 good.append(m)
         return good
 
-    def extract_good_points(self, im_source: IMAGE, im_search: IMAGE,
+    def extract_good_points(self, im_source: Image, im_search: Image,
                             kp_sch: List[cv2.KeyPoint], kp_src: List[cv2.KeyPoint], good: List[cv2.DMatch]):
         """
         根据匹配点(good)数量,提取识别区域
@@ -238,7 +238,7 @@ class KAZE(object):
             else:
                 return M, mask
 
-    def _handle_two_good_points(self, im_source: IMAGE, im_search: IMAGE,
+    def _handle_two_good_points(self, im_source: Image, im_search: Image,
                                 kp_sch: List[cv2.KeyPoint], kp_src: List[cv2.KeyPoint], good: List[cv2.DMatch]):
         """ 处理两对特征点的情况 """
         pts_sch1 = int(kp_sch[good[0].queryIdx].pt[0]), int(kp_sch[good[0].queryIdx].pt[1])
@@ -248,7 +248,7 @@ class KAZE(object):
 
         return self._two_good_points(pts_sch1, pts_sch2, pts_src1, pts_src2, im_search, im_source)
 
-    def _handle_three_good_points(self, im_source: IMAGE, im_search: IMAGE,
+    def _handle_three_good_points(self, im_source: Image, im_search: Image,
                                   kp_sch: List[cv2.KeyPoint], kp_src: List[cv2.KeyPoint], good: List[cv2.DMatch]):
         """ 处理三对特征点的情况 """
         # 拿出sch和src的两个点(点1)和(点2点3的中点)，
@@ -298,7 +298,7 @@ class KAZE(object):
             pypts.append(tuple(npt[0]))
         return Rect(x=x_min, y=y_min, width=(x_max - x_min), height=(y_max - y_min))
 
-    def _many_good_pts(self, im_source: IMAGE, im_search: IMAGE, kp_sch: List[cv2.KeyPoint], kp_src: List[cv2.KeyPoint],
+    def _many_good_pts(self, im_source: Image, im_search: Image, kp_sch: List[cv2.KeyPoint], kp_src: List[cv2.KeyPoint],
                        good: List[cv2.DMatch]) -> Rect:
         """
         特征点匹配数量>=4时,使用单矩阵映射,求出识别的目标区域
