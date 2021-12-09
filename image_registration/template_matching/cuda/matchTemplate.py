@@ -68,7 +68,8 @@ class CudaMatchTemplate(MatchTemplate):
         # 求取可信度:
         if rgb:
             # 如果有颜色校验,对目标区域进行BGR三通道校验:
-            confidence = self.cuda_cal_rgb_confidence(img_crop, im_search)
+            # confidence = self.cuda_cal_rgb_confidence(img_crop, im_search)
+            confidence = MatchTemplate.cal_rgb_confidence(img_crop, im_search)
         else:
             confidence = max_val
         return confidence

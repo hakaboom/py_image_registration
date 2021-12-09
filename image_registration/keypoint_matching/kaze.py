@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 from baseImage import Image, Rect
 from image_registration.template_matching.matchTemplate import MatchTemplate
-from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError, HomographyError,
-                                           MatchResultError)
+from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError,
+                                           HomographyError, MatchResultError)
 from image_registration.utils import generate_result
 
 
@@ -209,9 +209,11 @@ class KAZE(object):
             return None
         elif len(good) in [2, 3]:
             if len(good) == 2:
-                origin_result = self._handle_two_good_points(im_source, im_search, kp_sch, kp_src, good)
+                origin_result = self._handle_two_good_points(im_source=im_source, im_search=im_search,
+                                                             kp_sch=kp_sch, kp_src=kp_src, good=good)
             else:
-                origin_result = self._handle_three_good_points(im_source, im_search, kp_sch, kp_src, good)
+                origin_result = self._handle_three_good_points(im_source=im_source, im_search=im_search,
+                                                               kp_sch=kp_sch, kp_src=kp_src, good=good)
 
             if isinstance(origin_result, dict):
                 return None
@@ -219,7 +221,8 @@ class KAZE(object):
                 return origin_result
         else:
             # 匹配点数量>=4,使用单矩阵映射求出目标区域
-            return self._many_good_pts(im_source, im_search, kp_sch, kp_src, good)
+            return self._many_good_pts(im_source=im_source, im_search=im_search,
+                                       kp_sch=kp_sch, kp_src=kp_src, good=good)
 
     @staticmethod
     def _find_homography(sch_pts, src_pts):

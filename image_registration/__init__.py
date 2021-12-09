@@ -15,3 +15,8 @@ from .template_matching.matchTemplate import MatchTemplate
 
 # CUDA Template Matching
 from .template_matching.cuda.matchTemplate import CudaMatchTemplate
+
+
+# api
+from .findit import Findit
+

@@ -2,13 +2,21 @@
 python setup.py sdist
 twine upload dist/*
 """
+import time
 
 from baseImage import Image
-from image_registration.findit import Findit
+from image_registration import CudaMatchTemplate, MatchTemplate
 
-match = Findit()
 
-im_search = Image('./test/image/star.png')
+im_source = Image('./test/image/test.png')
+im_search = Image('./test/image/test2.png')
+im_source.transform_gpu()
+im_search.transform_gpu()
+# tpl = CudaMatchTemplate()
+tpl = MatchTemplate()
 
-for i in range(10000):
-    match.find_best_result(im_source='./test/image/test.png', im_search=im_search)
+tpl.find_best_result(im_source=im_source, im_search=im_search)
+start_time = time.time()
+for i in range(100):
+    tpl.find_best_result(im_source=im_source, im_search=im_search)
+print(time.time() - start_time)

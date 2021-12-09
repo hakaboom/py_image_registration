@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='py-image-registration',
-    version='1.0.12',
+    version='1.0.14',
     author='hakaboom',
     license="Apache License 2.0",
     author_email='1534225986@qq.com',

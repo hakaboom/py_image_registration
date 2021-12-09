@@ -3,9 +3,9 @@
 """ opencv matchTemplate"""
 import cv2
 import numpy as np
-
+import time
 from image_registration.exceptions import (MatchResultError)
-from image_registration.utils import generate_result
+from image_registration.utils import generate_result, print_run_time
 from baseImage import Image, Rect
 from typing import Union, Tuple
 
@@ -23,6 +23,7 @@ class MatchTemplate(object):
         self.threshold = threshold
         self.rgb = rgb
 
+    @print_run_time()
     def find_best_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, rgb: bool = True):
@@ -36,6 +37,7 @@ class MatchTemplate(object):
         """
         im_source, im_search = self.check_detection_input(im_source, im_search)
         result = self._get_template_result_matrix(im_source, im_search)
+
         # 找到最佳匹配项
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
         h, w = im_search.size
@@ -155,7 +157,6 @@ class MatchTemplate(object):
             target_img = im_source.crop_image(crop_rect)
         except OverflowError:
             raise MatchResultError(f"Target area({crop_rect}) out of screen{im_source.size}")
-
         confidence = self._get_confidence_from_matrix(target_img, im_search, max_val, rgb)
         return confidence
 
