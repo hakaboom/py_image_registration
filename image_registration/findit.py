@@ -22,7 +22,6 @@ class Findit(object):
         self.rgb = rgb
         self.match_methods = self.init_matching_methods()
 
-    @print_run_time()
     def find_best_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
                          threshold: Union[int, float] = None, rgb: bool = None):
