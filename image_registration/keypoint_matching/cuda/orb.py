@@ -60,6 +60,7 @@ class CUDA_ORB(KAZE):
         try:
             keypoints, descriptors = self.detector.detectAndComputeAsync(image, None)
         except cv2.error:
+            # https://github.com/opencv/opencv/issues/10573
             raise CudaOrbDetectorError('{} detect error, Try adjust detector params'.format(self.METHOD_NAME))
         else:
             keypoints = self.detector.convert(keypoints)

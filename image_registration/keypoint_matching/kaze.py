@@ -3,6 +3,7 @@
 from typing import Union, Tuple, List
 import cv2
 import numpy as np
+import time
 from baseImage import Image, Rect
 from image_registration.template_matching.matchTemplate import MatchTemplate
 from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError,
@@ -48,12 +49,13 @@ class KAZE(object):
         rgb = rgb is None and self.rgb or rgb
 
         im_source, im_search = self.check_image_input(im_source=im_source, im_search=im_search)
-
         # 获取特征点
         kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search.rgb_2_gray())
         kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source.rgb_2_gray())
         # 在特征点集中,匹配最接近的特征点
+
         rect, matches, good = self.get_rect_from_good_matches(im_source, im_search, kp_sch, des_sch, kp_src, des_src)
+
         if not rect:
             return None
         # 根据识别的结果,从待匹配图像中截取范围,进行模板匹配求出相似度

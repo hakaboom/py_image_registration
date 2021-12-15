@@ -1,5 +1,6 @@
 # keyPoint Matching
 from .keypoint_matching.kaze import KAZE
+from .keypoint_matching.akaze import AKAZE
 from .keypoint_matching.orb import ORB
 from .keypoint_matching.sift import SIFT, RootSIFT
 from .keypoint_matching.surf import SURF
