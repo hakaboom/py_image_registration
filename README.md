@@ -3,7 +3,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/network)
 [![GitHub stars](https://img.shields.io/github/stars/hakaboom/py_image_registration)](https://github.com/hakaboom/py_image_registration/stargazers)
 [![GitHub license](https://img.shields.io/github/license/hakaboom/py_image_registration?style=plastic)](https://github.com/hakaboom/py_image_registration/blob/master/LICENSE)
-
+![PyPI - Downloads](https://img.shields.io/pypi/dm/py-image-registration)
 
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
