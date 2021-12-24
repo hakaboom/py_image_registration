@@ -3,12 +3,12 @@
 
 ## 前置准备
 
-###1.下载opencv与opencv_contrib源码
+### 1.下载opencv与opencv_contrib源码
    - opencv: https://github.com/opencv/opencv
    - opencv_contrib: https://github.com/opencv/opencv_contrib
    - **注意：版本必须对应**
 
-###2.安装cuda与cudann
+### 2.安装cuda与cudann
    - 根据自己的环境下载cuda并安装: https://developer.nvidia.com/cuda-toolkit-archive
    - 下载对应cuda版本的cudnn:https://developer.nvidia.com/rdp/cudnn-download
      - cudnn下载完成后,将压缩包解压,文件全都复制到cuda的安装目录下![img.png](images/cudnn_zip.png)
