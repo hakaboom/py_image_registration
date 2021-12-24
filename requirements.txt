@@ -1,5 +1,2 @@
-baseImage==1.0.9
-colorama==0.4.4
-loguru==0.5.3
-numpy==1.21.4
-win32-setctime==1.0.4
+baseImage>=1.1.0
+loguru>=0.5.3
