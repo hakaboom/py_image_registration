@@ -8,7 +8,7 @@ from baseImage import Image, Rect
 from image_registration.template_matching.matchTemplate import MatchTemplate
 from image_registration.exceptions import (NoEnoughPointsError, CreateExtractorError, PerspectiveTransformError,
                                            HomographyError, MatchResultError)
-from image_registration.utils import generate_result
+from image_registration.utils import generate_result, match_time_debug
 
 
 class KAZE(object):
@@ -52,8 +52,8 @@ class KAZE(object):
         # 获取特征点
         kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search.rgb_2_gray())
         kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source.rgb_2_gray())
-        # 在特征点集中,匹配最接近的特征点
 
+        # 在特征点集中,匹配最接近的特征点
         rect, matches, good = self.get_rect_from_good_matches(im_source, im_search, kp_sch, des_sch, kp_src, des_src)
 
         if not rect:
@@ -63,9 +63,9 @@ class KAZE(object):
         best_match = generate_result(rect=rect, confi=confidence)
         return best_match if confidence > threshold else None
 
-    def find_all_result(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                        im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
-                        threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = None):
+    def find_all_results(self, im_source: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         im_search: Union[Image, str, np.ndarray, cv2.cuda_GpuMat, bytes],
+                         threshold: Union[int, float] = None, max_count: int = 10, rgb: bool = None):
         """
         通过特征点匹配,在im_source中,找到符合im_search的范围坐标集合
         :param im_source: 待匹配图像
@@ -83,8 +83,14 @@ class KAZE(object):
         # 获取特征点
         kp_sch, des_sch = self.get_keypoints_and_descriptors(image=im_search.rgb_2_gray())
         kp_src, des_src = self.get_keypoints_and_descriptors(image=im_source.rgb_2_gray())
-        # TODO: 保留kp和des,做一份拷贝
-        while len(kp_src) > 2 or len(kp_sch) > 2:
+
+        # 1.0.17
+        if type(kp_sch) == tuple:
+            kp_sch = list(kp_sch)
+        if type(kp_src) == tuple:
+            kp_src = list(kp_src)
+
+        while len(kp_src) > 2 and len(kp_sch) > 2:
             rect, matches, good = self.get_rect_from_good_matches(im_source, im_search,
                                                                   kp_sch, des_sch,
                                                                   kp_src, des_src)
@@ -143,6 +149,7 @@ class KAZE(object):
             raise NoEnoughPointsError('{} detect not enough feature points in input images'.format(self.METHOD_NAME))
         return keypoints, descriptors
 
+    # @match_time_debug
     def get_rect_from_good_matches(self, im_source: Image, im_search: Image,
                                    kp_sch: List[cv2.KeyPoint], des_sch: np.ndarray,
                                    kp_src: List[cv2.KeyPoint], des_src: np.ndarray) \
@@ -356,8 +363,6 @@ class KAZE(object):
         删除rect范围内的特征点与描述符
         """
         tl, br = rect.tl, rect.br
-        kp = kp.copy()
-        des = des.copy()
 
         delect_list = tuple(kp.index(i) for i in kp if tl.x <= i.pt[0] <= br.x and tl.y <= i.pt[1] <= br.y)
         for i in sorted(delect_list, reverse=True):
@@ -371,9 +376,6 @@ class KAZE(object):
         """
         将匹配的特征点与描述符删除
         """
-        kp = kp.copy()
-        des = des.copy()
-
         delect_list = [i.trainIdx for i in good]
         for i in sorted(delect_list, reverse=True):
             kp.pop(i)

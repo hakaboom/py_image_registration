@@ -36,17 +36,26 @@ def match_time_debug(func):
         # result = (rect, matches, good)
         result = func(self, *args, **kwargs)
         rect, matches, good = result
-        # logger.debug('sch_keypoints={}, src_keypoints={}, matches={}, good={}',
-        #              len(kp_sch), len(kp_src), len(matches), len(good))
+        logger.debug('sch_keypoints={}, src_keypoints={}, matches={}, good={}',
+                     len(kp_sch), len(kp_src), len(matches), len(good))
 
-        # im_source, im_search = im_source.clone().imread(), im_search.clone().imread()
-        # cv2.namedWindow(str(len(good)), cv2.WINDOW_KEEPRATIO)
-        # cv2.imshow(str(len(good)), cv2.drawMatches(im_search, kp_sch, im_source, kp_src, good, None, flags=2))
-        # cv2.namedWindow(str(len(good) + 1), cv2.WINDOW_KEEPRATIO)
-        # cv2.imshow(str(len(good) + 1), cv2.drawKeypoints(im_source, kp_src, im_source, color=(255, 0, 255)))
-        # cv2.namedWindow(str(len(good) + 2), cv2.WINDOW_KEEPRATIO)
-        # cv2.imshow(str(len(good) + 2), cv2.drawKeypoints(im_search, kp_sch, im_search, color=(255, 0, 255)))
-        # cv2.waitKey(0)
+        im_source, im_search = im_source.clone().imread(), im_search.clone().imread()
+        windowName = str(len(good))
+        good_matches = '{}-good_matches'.format(windowName)
+        src_kp = '{}-src_kp'.format(windowName)
+        sch_kp = '{}-sch_kp'.format(windowName)
+        knn_matches = '{}-knn_matches'.format(windowName)
+
+        cv2.namedWindow(good_matches, cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(knn_matches, cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(src_kp, cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(sch_kp, cv2.WINDOW_KEEPRATIO)
+
+        cv2.imshow(knn_matches, cv2.drawMatchesKnn(im_search, kp_sch, im_source, kp_src, matches, None, flags=2))
+        cv2.imshow(good_matches, cv2.drawMatches(im_search, kp_sch, im_source, kp_src, good, None, flags=2))
+        cv2.imshow(src_kp, cv2.drawKeypoints(im_source, kp_src, im_source, color=(255, 0, 255)))
+        cv2.imshow(sch_kp, cv2.drawKeypoints(im_search, kp_sch, im_search, color=(255, 0, 255)))
+        cv2.waitKey(0)
         return result
 
     return wrapper
