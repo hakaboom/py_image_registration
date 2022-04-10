@@ -1,3 +1,5 @@
+#! usr/bin/python
+# -*- coding:utf-8 -*-
 class BaseError(Exception):
     def __init__(self, message="", *args, **kwargs):
         self.message = message
