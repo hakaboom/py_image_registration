@@ -9,6 +9,7 @@ Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTempl
 
 同时包含cuda加速(ORB, SURF, matchTemplate)
 
+正在重构https://github.com/hakaboom/image_registration
 
 ## Requirements
 - 开发时使用的是python 3.8
