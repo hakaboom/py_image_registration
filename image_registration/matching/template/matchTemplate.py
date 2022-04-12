@@ -53,6 +53,7 @@ class MatchTemplate(object):
 
         result = self._get_template_result_matrix(im_source=im_source, im_search=im_search)
         # 找到最佳匹配项
+
         min_val, max_val, min_loc, max_loc = self.minMaxLoc(result.data)
         h, w = im_search.size
         # 求可信度
@@ -100,7 +101,7 @@ class MatchTemplate(object):
 
             if (confidence < (threshold or self.threshold)) or len(results) >= max_count:
                 break
-            results.append(rect)
+            results.append(generate_result(rect, confidence))
             result.rectangle(rect=Rect(int(max_loc[0] - w / 2), int(max_loc[1] - h / 2), w, h), color=(0, 0, 0), thickness=-1)
 
         return results if results else None
@@ -182,6 +183,7 @@ class MatchTemplate(object):
             float: 最小置信度
         """
         im_search = im_search.copyMakeBorder(10, 10, 10, 10, cv2.BORDER_REPLICATE)
+
         img_src_hsv = im_source.cvtColor(cv2.COLOR_BGR2HSV)
         img_sch_hsv = im_search.cvtColor(cv2.COLOR_BGR2HSV)
 
@@ -226,7 +228,7 @@ class MatchTemplate(object):
 class CudaMatchTemplae(MatchTemplate):
     METHOD_NAME = 'tpl'
     Dtype = np.uint8
-    Place = Place.GpuMat
+    Place = (Place.GpuMat, )
 
     def __init__(self, threshold: Union[int, float] = 0.8, rgb: bool = True):
         super(CudaMatchTemplae, self).__init__(threshold=threshold, rgb=rgb)
