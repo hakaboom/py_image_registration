@@ -5,11 +5,12 @@
 [![GitHub license](https://img.shields.io/github/license/hakaboom/py_image_registration?style=plastic)](https://github.com/hakaboom/py_image_registration/blob/master/LICENSE)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/py-image-registration)
 
+该项目已移到另外一个库进行后续开发 https://github.com/hakaboom/image_registration
+
 Image registration algorithm. Includes SIFT, ORB, SURF, AKAZE, BRIEF, matchTemplate
 
 同时包含cuda加速(ORB, SURF, matchTemplate)
 
-正在重构https://github.com/hakaboom/image_registration
 
 ## Requirements
 - 开发时使用的是python 3.8
