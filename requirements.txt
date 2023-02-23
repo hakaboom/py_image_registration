@@ -1,2 +1,2 @@
-baseImage==1.1.1
+baseImage==2.0.5
 loguru>=0.5.3
